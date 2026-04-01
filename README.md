@@ -69,6 +69,8 @@ Nothing sensitive is stored. Input summaries are truncated to 200 characters and
 pip install zoku && zoku setup
 ```
 
+> **Windows note:** If `zoku` is not recognized, use `python -m zoku setup` instead.
+
 That's it. Two commands, zero configuration. Zoku installs globally and works in every project.
 
 ### Install from Claude Code
@@ -99,7 +101,21 @@ This writes to `your-project/.claude/settings.json` and creates `your-project/.z
 
 ### Windows
 
-Zoku automatically detects Windows and uses the correct Python path in hook commands. No manual configuration needed.
+If `zoku` is not recognized after install, Python's Scripts directory is not on your PATH. Use `python -m zoku` instead:
+
+```powershell
+pip install zoku
+python -m zoku setup
+```
+
+All `zoku` commands work the same way with `python -m zoku`:
+
+```powershell
+python -m zoku status
+python -m zoku patterns
+```
+
+Or add the Scripts directory to your PATH permanently (the path is shown in pip's install output).
 
 ### Uninstalling
 
