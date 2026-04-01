@@ -66,7 +66,7 @@ Nothing sensitive is stored. Input summaries are truncated to 200 characters and
 ### Quick Install (Recommended)
 
 ```bash
-pip install deja && deja setup
+pip install deja-code && deja setup
 ```
 
 That's it. Two commands, zero configuration. Deja installs globally and works in every project.
@@ -75,14 +75,14 @@ That's it. Two commands, zero configuration. Deja installs globally and works in
 
 Already inside a Claude Code session? Just ask Claude:
 
-> Install deja for me: `pip install deja && deja setup`
+> Install deja for me: `pip install deja-code && deja setup`
 
 Claude will run it and Deja starts working immediately — in that session and every future one.
 
 ### Install from GitHub (latest development version)
 
 ```bash
-pip install git+https://github.com/kasparovabi/deja.git && deja setup
+pip install git+https://github.com/kasparovabi/deja.git#egg=deja-code && deja setup
 ```
 
 ### Per-Project Install
@@ -90,7 +90,7 @@ pip install git+https://github.com/kasparovabi/deja.git && deja setup
 If you only want Deja active in a specific project:
 
 ```bash
-pip install deja
+pip install deja-code
 cd your-project
 deja install
 ```
@@ -107,7 +107,7 @@ Deja automatically detects Windows and uses the correct Python path in hook comm
 deja uninstall --global    # remove global hooks
 deja uninstall             # remove project hooks
 deja clear                 # delete all recorded data
-pip uninstall deja         # remove the package
+pip uninstall deja-code    # remove the package
 ```
 
 ## Usage
