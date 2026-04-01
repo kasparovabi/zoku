@@ -8,7 +8,7 @@
 **The invisible automation layer for Claude Code.**
 
 <p align="center">
-  <img src="assets/demo.gif" alt="Zoku Demo" width="700">
+  <img src="assets/demo.svg" alt="Zoku Demo" width="700">
 </p>
 
 Zoku is an open source Claude Code hook that runs silently in the background while you work. It watches every action you take across sessions, discovers repeated patterns in your workflow, and tells you about them so you can automate the boring parts.
@@ -175,7 +175,7 @@ zoku/
 Zoku registers three hooks in Claude Code's settings:
 
 | Event | What Zoku Does | Timeout |
-|-------|---------------|---------|
+|-------|---------------|--------|
 | `PostToolUse` | Records the action to the session's JSONL trace file | 5s |
 | `Stop` | Loads all traces, runs pattern detection, saves new patterns | 15s |
 | `SessionStart` | Loads saved patterns and injects them as context for Claude | 5s |

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#151b25"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e2837" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#grid)" opacity="0.5"/>
+  
+  <!-- Workflow pattern lines -->
+  <g stroke="#58a6ff" stroke-width="2" fill="none" opacity="0.4">
+    <polyline points="100,280 250,200 400,260 550,180 700,240"/>
+    <polyline points="580,400 730,450 880,370 1030,430 1180,390"/>
+  </g>
+  <g fill="#58a6ff">
+    <circle cx="100" cy="280" r="5"/><circle cx="250" cy="200" r="5"/>
+    <circle cx="400" cy="260" r="5"/><circle cx="550" cy="180" r="5"/>
+    <circle cx="700" cy="240" r="5"/><circle cx="580" cy="400" r="5"/>
+    <circle cx="730" cy="450" r="5"/><circle cx="880" cy="370" r="5"/>
+    <circle cx="1030" cy="430" r="5"/><circle cx="1180" cy="390" r="5"/>
+  </g>
+  
+  <!-- Accent dots -->
+  <g fill="#58a6ff" opacity="0.3">
+    <circle cx="150" cy="120" r="2"/><circle cx="300" cy="80" r="1.5"/>
+    <circle cx="500" cy="140" r="2.5"/><circle cx="750" cy="100" r="1.5"/>
+    <circle cx="900" cy="160" r="2"/><circle cx="1050" cy="90" r="2"/>
+    <circle cx="200" cy="500" r="1.5"/><circle cx="400" cy="520" r="2"/>
+    <circle cx="600" cy="480" r="1.5"/><circle cx="800" cy="530" r="2"/>
+    <circle cx="1000" cy="500" r="2.5"/><circle cx="1150" cy="470" r="1.5"/>
+    <circle cx="180" cy="350" r="1.5"/><circle cx="950" cy="250" r="2"/>
+    <circle cx="1100" cy="300" r="1.5"/><circle cx="350" cy="400" r="2"/>
+  </g>
+  
+  <!-- Corner brackets -->
+  <g stroke="#58a6ff" stroke-width="3" fill="none">
+    <path d="M30,80 L30,30 L80,30"/>
+    <path d="M1200,30 L1250,30 L1250,80"/>
+    <path d="M30,560 L30,610 L80,610"/>
+    <path d="M1200,610 L1250,610 L1250,560"/>
+  </g>
+  
+  <!-- Title -->
+  <text x="640" y="290" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="96" font-weight="bold" fill="white">Zoku</text>
+  
+  <!-- Subtitle -->
+  <text x="640" y="350" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="28" fill="#b4bed2">The invisible automation layer for Claude Code.</text>
+  
+  <!-- Divider line with dots -->
+  <line x1="200" y1="400" x2="1080" y2="400" stroke="#323a4a" stroke-width="1"/>
+  <g fill="#58a6ff">
+    <circle cx="200" cy="400" r="2.5"/><circle cx="310" cy="400" r="2.5"/>
+    <circle cx="420" cy="400" r="2.5"/><circle cx="530" cy="400" r="2.5"/>
+    <circle cx="640" cy="400" r="2.5"/><circle cx="750" cy="400" r="2.5"/>
+    <circle cx="860" cy="400" r="2.5"/><circle cx="970" cy="400" r="2.5"/>
+    <circle cx="1080" cy="400" r="2.5"/>
+  </g>
+  
+  <!-- pip install badge -->
+  <rect x="520" y="440" width="240" height="42" rx="8" fill="#161e2d" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="640" y="468" text-anchor="middle" font-family="monospace" font-size="20" fill="#58a6ff">pip install zoku</text>
+  
+  <!-- Tags -->
+  <text x="640" y="560" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="20" fill="#7887a0">Zero config  ·  Zero dependencies  ·  Pure Python</text>
+</svg>
