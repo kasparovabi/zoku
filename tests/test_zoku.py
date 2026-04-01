@@ -1,4 +1,4 @@
-"""Comprehensive tests for Deja Agent."""
+"""Comprehensive tests for Zoku."""
 
 from __future__ import annotations
 
@@ -8,17 +8,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from deja.recorder import (
+from zoku.recorder import (
     Action, SessionTrace, summarise_input, record_action,
-    load_all_traces, _deja_dir, _traces_dir,
+    load_all_traces, _zoku_dir, _traces_dir,
 )
-from deja.detector import (
+from zoku.detector import (
     detect_patterns, save_patterns, load_patterns,
     WorkflowPattern, _extract_subsequences, _is_contiguous_subset,
 )
-from deja.hooks import handle_post_tool_use, handle_stop, handle_session_start
-from deja.installer import install, uninstall, _is_deja_entry
-from deja.cli import main
+from zoku.hooks import handle_post_tool_use, handle_stop, handle_session_start
+from zoku.installer import install, uninstall, _is_zoku_entry
+from zoku.cli import main
 
 
 class _TempProjectMixin:
@@ -27,14 +27,14 @@ class _TempProjectMixin:
     def setUp(self):
         self._tmpdir = tempfile.TemporaryDirectory()
         self.project = Path(self._tmpdir.name)
-        self._old_env = os.environ.get("DEJA_DATA_DIR")
-        os.environ["DEJA_DATA_DIR"] = str(self.project / ".deja")
+        self._old_env = os.environ.get("ZOKU_DATA_DIR")
+        os.environ["ZOKU_DATA_DIR"] = str(self.project / ".zoku")
 
     def tearDown(self):
         if self._old_env is None:
-            os.environ.pop("DEJA_DATA_DIR", None)
+            os.environ.pop("ZOKU_DATA_DIR", None)
         else:
-            os.environ["DEJA_DATA_DIR"] = self._old_env
+            os.environ["ZOKU_DATA_DIR"] = self._old_env
         self._tmpdir.cleanup()
 
     def _post_event(self, tool: str, inp: dict, session: str = "s1") -> dict:
@@ -301,7 +301,7 @@ class TestHooks(_TempProjectMixin, unittest.TestCase):
             ])
         result = handle_stop({"cwd": str(self.project)})
         self.assertIn("additionalContext", result)
-        self.assertIn("[Deja]", result["additionalContext"])
+        self.assertIn("[Zoku]", result["additionalContext"])
 
     def test_stop_ignores_refire(self):
         for sid in ("s1", "s2"):
@@ -348,10 +348,10 @@ class TestInstaller(unittest.TestCase):
             self.assertIn("Stop", data["hooks"])
             self.assertIn("SessionStart", data["hooks"])
 
-    def test_install_creates_deja_dir(self):
+    def test_install_creates_zoku_dir(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             install(tmpdir)
-            self.assertTrue((Path(tmpdir) / ".deja" / "traces").is_dir())
+            self.assertTrue((Path(tmpdir) / ".zoku" / "traces").is_dir())
 
     def test_install_preserves_existing(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -392,11 +392,11 @@ class TestInstaller(unittest.TestCase):
             self.assertIn("hooks", data)
             self.assertEqual(len(data["hooks"]["PostToolUse"]), 1)
 
-    def test_is_deja_entry(self):
-        self.assertTrue(_is_deja_entry(
-            {"hooks": [{"command": "python3 -m deja.hooks stop"}]}
+    def test_is_zoku_entry(self):
+        self.assertTrue(_is_zoku_entry(
+            {"hooks": [{"command": "python3 -m zoku.hooks stop"}]}
         ))
-        self.assertFalse(_is_deja_entry(
+        self.assertFalse(_is_zoku_entry(
             {"hooks": [{"command": "other-hook.sh"}]}
         ))
 

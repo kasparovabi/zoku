@@ -30,7 +30,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .recorder import SessionTrace, Action, load_all_traces, _deja_dir
+from .recorder import SessionTrace, Action, load_all_traces, _zoku_dir
 
 # ---------------------------------------------------------------------------
 # Config
@@ -214,7 +214,7 @@ def _is_contiguous_subset(short: tuple[str, ...], long: tuple[str, ...]) -> bool
 # ---------------------------------------------------------------------------
 
 def _patterns_path(cwd: str | None = None) -> Path:
-    return _deja_dir(cwd) / "patterns.json"
+    return _zoku_dir(cwd) / "patterns.json"
 
 
 def save_patterns(patterns: list[WorkflowPattern], cwd: str | None = None) -> Path:

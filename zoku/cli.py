@@ -1,15 +1,15 @@
-"""Deja CLI.
+"""Zoku CLI.
 
 Usage::
 
-    deja install [--global]     # Install hooks into Claude Code
-    deja uninstall [--global]   # Remove hooks
-    deja setup                  # One-command install (global + welcome)
-    deja patterns               # Show discovered workflow patterns
-    deja traces                 # List recorded session traces
-    deja status                 # Show Deja status
-    deja analyse                # Force pattern analysis now
-    deja clear                  # Clear all recorded data
+    zoku install [--global]     # Install hooks into Claude Code
+    zoku uninstall [--global]   # Remove hooks
+    zoku setup                  # One-command install (global + welcome)
+    zoku patterns               # Show discovered workflow patterns
+    zoku traces                 # List recorded session traces
+    zoku status                 # Show Zoku status
+    zoku analyse                # Force pattern analysis now
+    zoku clear                  # Clear all recorded data
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import json
 from pathlib import Path
 
 from .installer import install, uninstall
-from .recorder import load_all_traces, _deja_dir, _traces_dir
+from .recorder import load_all_traces, _zoku_dir, _traces_dir
 from .detector import detect_patterns, save_patterns, load_patterns
 
 
@@ -30,27 +30,27 @@ def _print(msg: str = "") -> None:
 def cmd_setup(args: argparse.Namespace) -> int:
     """One-command setup: install hooks globally and print welcome."""
     _print()
-    _print("  Deja — invisible automation layer for Claude Code")
+    _print("  Zoku — invisible automation layer for Claude Code")
     _print("  " + "=" * 50)
     _print()
     actions = install(global_install=True)
     for a in actions:
         _print(f"  {a}")
     _print()
-    _print("  Done! Deja is now active in ALL your projects.")
+    _print("  Done! Zoku is now active in ALL your projects.")
     _print()
     _print("  What happens next:")
-    _print("    - Deja silently records your tool usage across sessions")
+    _print("    - Zoku silently records your tool usage across sessions")
     _print("    - After 2+ sessions, it detects repeated workflow patterns")
     _print("    - Patterns are injected into Claude's context automatically")
     _print()
     _print("  You don't need to do anything — just use Claude Code normally.")
     _print()
     _print("  Useful commands:")
-    _print("    deja status      Show installation status")
-    _print("    deja patterns    View discovered workflow patterns")
-    _print("    deja traces      List recorded session traces")
-    _print("    deja uninstall   Remove Deja hooks")
+    _print("    zoku status      Show installation status")
+    _print("    zoku patterns    View discovered workflow patterns")
+    _print("    zoku traces      List recorded session traces")
+    _print("    zoku uninstall   Remove Zoku hooks")
     _print()
     return 0
 
@@ -60,19 +60,19 @@ def cmd_install(args: argparse.Namespace) -> int:
     project_dir = args.project_dir or "."
 
     if is_global:
-        _print("Installing Deja hooks GLOBALLY (all projects)...")
+        _print("Installing Zoku hooks GLOBALLY (all projects)...")
     else:
-        _print("Installing Deja hooks into Claude Code...")
+        _print("Installing Zoku hooks into Claude Code...")
     _print()
     actions = install(project_dir, global_install=is_global)
     for a in actions:
         _print(f"  {a}")
     _print()
-    _print("Deja is now active.")
+    _print("Zoku is now active.")
     _print("It will silently record your actions and discover workflow patterns.")
     _print()
     _print("You don't need to do anything — just use Claude Code normally.")
-    _print("After a few sessions, run: deja patterns")
+    _print("After a few sessions, run: zoku patterns")
     if not is_global:
         _print()
         _print("Tip: Use --global to install once for ALL projects.")
@@ -94,7 +94,7 @@ def cmd_patterns(args: argparse.Namespace) -> int:
 
     if not patterns:
         _print("No workflow patterns discovered yet.")
-        _print("Keep using Claude Code — Deja will detect patterns after 2+ sessions.")
+        _print("Keep using Claude Code — Zoku will detect patterns after 2+ sessions.")
         return 0
 
     _print(f"Discovered {len(patterns)} workflow pattern(s):")
@@ -139,7 +139,7 @@ def cmd_traces(args: argparse.Namespace) -> int:
 
 def cmd_status(args: argparse.Namespace) -> int:
     project_dir = args.project_dir or "."
-    deja_dir = _deja_dir(project_dir)
+    zoku_dir = _zoku_dir(project_dir)
     settings_path = Path(project_dir).resolve() / ".claude" / "settings.json"
 
     # Check installation
@@ -151,7 +151,7 @@ def cmd_status(args: argparse.Namespace) -> int:
             for entries in hooks.values():
                 for entry in entries:
                     for hook in entry.get("hooks", []):
-                        if "deja" in hook.get("command", "").lower():
+                        if "zoku" in hook.get("command", "").lower():
                             installed = True
         except (json.JSONDecodeError, UnicodeDecodeError):
             pass
@@ -160,10 +160,10 @@ def cmd_status(args: argparse.Namespace) -> int:
     patterns = load_patterns(project_dir)
     total_actions = sum(len(t.actions) for t in traces)
 
-    _print("Deja Status")
+    _print("Zoku Status")
     _print("=" * 40)
     _print(f"  Installed:     {'Yes' if installed else 'No'}")
-    _print(f"  Data dir:      {deja_dir}")
+    _print(f"  Data dir:      {zoku_dir}")
     _print(f"  Sessions:      {len(traces)}")
     _print(f"  Total actions: {total_actions}")
     _print(f"  Patterns:      {len(patterns)}")
@@ -200,20 +200,20 @@ def cmd_analyse(args: argparse.Namespace) -> int:
 
 def cmd_clear(args: argparse.Namespace) -> int:
     project_dir = args.project_dir or "."
-    deja_dir = _deja_dir(project_dir)
+    zoku_dir = _zoku_dir(project_dir)
 
-    if not deja_dir.is_dir():
-        _print("No Deja data found.")
+    if not zoku_dir.is_dir():
+        _print("No Zoku data found.")
         return 0
 
     import shutil
-    traces_dir = deja_dir / "traces"
+    traces_dir = zoku_dir / "traces"
     if traces_dir.is_dir():
         count = len(list(traces_dir.glob("*.jsonl")))
         shutil.rmtree(traces_dir)
         _print(f"Cleared {count} session trace(s).")
 
-    patterns_file = deja_dir / "patterns.json"
+    patterns_file = zoku_dir / "patterns.json"
     if patterns_file.is_file():
         patterns_file.unlink()
         _print("Cleared saved patterns.")
@@ -223,8 +223,8 @@ def cmd_clear(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="deja",
-        description="Deja — invisible automation layer for Claude Code",
+        prog="zoku",
+        description="Zoku — invisible automation layer for Claude Code",
     )
     sub = parser.add_subparsers(dest="command")
 
@@ -232,11 +232,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("setup", help="One-command global install with welcome guide")
 
     for name, help_text in [
-        ("install", "Install Deja hooks into Claude Code"),
-        ("uninstall", "Remove Deja hooks"),
+        ("install", "Install Zoku hooks into Claude Code"),
+        ("uninstall", "Remove Zoku hooks"),
         ("patterns", "Show discovered workflow patterns"),
         ("traces", "List recorded session traces"),
-        ("status", "Show Deja status"),
+        ("status", "Show Zoku status"),
         ("analyse", "Force pattern analysis now"),
         ("clear", "Clear all recorded data"),
     ]:

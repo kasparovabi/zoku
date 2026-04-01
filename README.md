@@ -1,4 +1,4 @@
-# Deja
+# Zoku
 
 [![CI](https://github.com/kasparovabi/deja/actions/workflows/ci.yml/badge.svg)](https://github.com/kasparovabi/deja/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
@@ -8,12 +8,12 @@
 **The invisible automation layer for Claude Code.**
 
 <p align="center">
-  <img src="assets/demo.gif" alt="Deja Demo" width="700">
+  <img src="assets/demo.gif" alt="Zoku Demo" width="700">
 </p>
 
-Deja is an open source Claude Code hook that runs silently in the background while you work. It watches every action you take across sessions, discovers repeated patterns in your workflow, and tells you about them so you can automate the boring parts.
+Zoku is an open source Claude Code hook that runs silently in the background while you work. It watches every action you take across sessions, discovers repeated patterns in your workflow, and tells you about them so you can automate the boring parts.
 
-You don't configure anything. You don't change how you work. You just install it once and forget about it. Deja does the rest.
+You don't configure anything. You don't change how you work. You just install it once and forget about it. Zoku does the rest.
 
 ## The Problem
 
@@ -21,11 +21,11 @@ Every developer has habits they don't notice. You grep for something, open the f
 
 The issue is that nobody sits down and audits their own workflow. It's tedious, it's invisible, and honestly most people don't even realize they're repeating themselves.
 
-## What Deja Does
+## What Zoku Does
 
-Deja hooks into Claude Code's event system and records every tool action: file reads, edits, searches, bash commands, everything. It stores these as session traces. When a session ends, Deja runs a pattern detection algorithm across all your recorded sessions. It looks for contiguous subsequences of tool usage that appear in two or more sessions.
+Zoku hooks into Claude Code's event system and records every tool action: file reads, edits, searches, bash commands, everything. It stores these as session traces. When a session ends, Zoku runs a pattern detection algorithm across all your recorded sessions. It looks for contiguous subsequences of tool usage that appear in two or more sessions.
 
-When you start a new session, Deja loads the patterns it found and injects them into Claude's context. Claude now knows "hey, this user frequently does Grep then Read then Edit then Bash then Bash" and can proactively suggest or execute that workflow.
+When you start a new session, Zoku loads the patterns it found and injects them into Claude's context. Claude now knows "hey, this user frequently does Grep then Read then Edit then Bash then Bash" and can proactively suggest or execute that workflow.
 
 ### How the Detection Works
 
@@ -41,10 +41,10 @@ No machine learning, no cloud calls, no external dependencies. Pure algorithmic 
 
 ### What Gets Stored
 
-All data lives in a `.deja/` directory (local or global depending on your install):
+All data lives in a `.zoku/` directory (local or global depending on your install):
 
 ```
-.deja/
+.zoku/
     traces/
         2026-04-01_session123.jsonl    # one JSONL file per session
         2026-04-02_session456.jsonl
@@ -66,74 +66,74 @@ Nothing sensitive is stored. Input summaries are truncated to 200 characters and
 ### Quick Install (Recommended)
 
 ```bash
-pip install deja-claude && deja setup
+pip install zoku && zoku setup
 ```
 
-That's it. Two commands, zero configuration. Deja installs globally and works in every project.
+That's it. Two commands, zero configuration. Zoku installs globally and works in every project.
 
 ### Install from Claude Code
 
 Already inside a Claude Code session? Just ask Claude:
 
-> Install deja for me: `pip install deja-claude && deja setup`
+> Install zoku for me: `pip install zoku && zoku setup`
 
-Claude will run it and Deja starts working immediately — in that session and every future one.
+Claude will run it and Zoku starts working immediately — in that session and every future one.
 
 ### Install from GitHub (latest development version)
 
 ```bash
-pip install git+https://github.com/kasparovabi/deja.git#egg=deja-claude && deja setup
+pip install git+https://github.com/kasparovabi/deja.git && zoku setup
 ```
 
 ### Per-Project Install
 
-If you only want Deja active in a specific project:
+If you only want Zoku active in a specific project:
 
 ```bash
-pip install deja-claude
+pip install zoku
 cd your-project
-deja install
+zoku install
 ```
 
-This writes to `your-project/.claude/settings.json` and creates `your-project/.deja/`.
+This writes to `your-project/.claude/settings.json` and creates `your-project/.zoku/`.
 
 ### Windows
 
-Deja automatically detects Windows and uses the correct Python path in hook commands. No manual configuration needed.
+Zoku automatically detects Windows and uses the correct Python path in hook commands. No manual configuration needed.
 
 ### Uninstalling
 
 ```bash
-deja uninstall --global    # remove global hooks
-deja uninstall             # remove project hooks
-deja clear                 # delete all recorded data
-pip uninstall deja-claude    # remove the package
+zoku uninstall --global    # remove global hooks
+zoku uninstall             # remove project hooks
+zoku clear                 # delete all recorded data
+pip uninstall zoku         # remove the package
 ```
 
 ## Usage
 
 There is no usage. That's the point.
 
-Install it and use Claude Code exactly as you always do. Deja is completely invisible during your sessions. It only surfaces information when:
+Install it and use Claude Code exactly as you always do. Zoku is completely invisible during your sessions. It only surfaces information when:
 
 1. A session **ends** and new patterns are found (logged silently)
 2. A session **starts** and previously discovered patterns exist (injected as context for Claude)
 
 ### CLI Commands
 
-To inspect what Deja has learned:
+To inspect what Zoku has learned:
 
 ```bash
-deja status      # installation status, session count, pattern count
-deja patterns    # list all discovered workflow patterns with details
-deja traces      # show recorded sessions and their tool sequences
-deja analyse     # force pattern analysis right now (normally happens on session end)
-deja clear       # wipe all traces and patterns
+zoku status      # installation status, session count, pattern count
+zoku patterns    # list all discovered workflow patterns with details
+zoku traces      # show recorded sessions and their tool sequences
+zoku analyse     # force pattern analysis right now (normally happens on session end)
+zoku clear       # wipe all traces and patterns
 ```
 
 ### Example Output
 
-After a few sessions, `deja patterns` might show:
+After a few sessions, `zoku patterns` might show:
 
 ```
 Discovered 3 workflow pattern(s):
@@ -160,10 +160,10 @@ Discovered 3 workflow pattern(s):
 ## Architecture
 
 ```
-deja/
+zoku/
     __init__.py         # package metadata (version 0.1.0)
-    __main__.py         # entry point: deja
-    cli.py              # 7 CLI commands (install, uninstall, patterns, traces, status, analyse, clear)
+    __main__.py         # entry point: zoku
+    cli.py              # 8 CLI commands (setup, install, uninstall, patterns, traces, status, analyse, clear)
     recorder.py         # Action/SessionTrace dataclasses, JSONL storage, summarise_input()
     detector.py         # Pattern detection: subsequence extraction, frequency counting, subset pruning
     hooks.py            # Claude Code hook handlers (PostToolUse, Stop, SessionStart)
@@ -172,9 +172,9 @@ deja/
 
 ### Hook Integration
 
-Deja registers three hooks in Claude Code's settings:
+Zoku registers three hooks in Claude Code's settings:
 
-| Event | What Deja Does | Timeout |
+| Event | What Zoku Does | Timeout |
 |-------|---------------|---------|
 | `PostToolUse` | Records the action to the session's JSONL trace file | 5s |
 | `Stop` | Loads all traces, runs pattern detection, saves new patterns | 15s |
@@ -188,19 +188,19 @@ Hooks communicate via stdin/stdout JSON, following Claude Code's hook protocol. 
 
 **External Dependencies**: None. Everything uses Python's standard library (json, pathlib, dataclasses, argparse, datetime, shutil).
 
-**Test Suite**: 48 tests covering all Deja functionality. Run with:
+**Test Suite**: 49 tests covering all Zoku functionality. Run with:
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-**Data Safety**: Deja never modifies your code, never sends data anywhere, and never interferes with Claude Code's normal operation. It only *reads* hook events and *writes* to its own `.deja/` directory.
+**Data Safety**: Zoku never modifies your code, never sends data anywhere, and never interferes with Claude Code's normal operation. It only *reads* hook events and *writes* to its own `.zoku/` directory.
 
 ## Roadmap
 
 This project is part of a larger vision for AI coding tool infrastructure:
 
-**Deja v2**: Workflow replay (not just detection, but execution), cross project pattern aggregation, pattern sharing between team members
+**Zoku v2**: Workflow replay (not just detection, but execution), cross project pattern aggregation, pattern sharing between team members
 
 **AgentBlackBox**: SaaS audit trail for AI agent sessions. Full token cost tracking, decision tree visualization, compliance reporting for enterprises that need to prove what their AI agents did and why.
 
