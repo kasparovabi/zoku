@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deja"
+version = "0.1.0"
+description = "Invisible automation layer for Claude Code. Watches your sessions, discovers repeated workflows, suggests automating them."
+requires-python = ">=3.10"
+license = "MIT"
+authors = []
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/kasparovabi/claw-code"
+
+[project.scripts]
+deja = "deja.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["deja*"]

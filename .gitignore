@@ -1,0 +1,6 @@
+__pycache__/
+archive/
+.claude/
+.deja/
+.port_sessions/
+*.pyc
