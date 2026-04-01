@@ -21,7 +21,6 @@ Homepage = "https://github.com/kasparovabi/claw-code"
 
 [project.scripts]
 phantom = "phantom.cli:main"
-harnesskit = "harnesskit.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["phantom*", "harnesskit*"]
+include = ["phantom*"]

@@ -1,6 +1,15 @@
 # Phantom Agent
 
+[![CI](https://github.com/kasparovabi/claw-code/actions/workflows/ci.yml/badge.svg)](https://github.com/kasparovabi/claw-code/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![No Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)](#technical-details)
+
 **The invisible automation layer for Claude Code.**
+
+<p align="center">
+  <img src="assets/demo.gif" alt="Phantom Agent Demo" width="700">
+</p>
 
 Phantom Agent is an open source Claude Code hook that runs silently in the background while you work. It watches every action you take across sessions, discovers repeated patterns in your workflow, and tells you about them so you can automate the boring parts.
 
@@ -172,50 +181,13 @@ Phantom registers three hooks in Claude Code's settings:
 
 Hooks communicate via stdin/stdout JSON, following Claude Code's hook protocol. Exit code 0 means success (parse the JSON output), exit code 2 means blocking error.
 
-## HarnessKit
-
-This repo also includes **HarnessKit**, a no code agent harness configuration toolkit. It lets you define tool permissions, security policies, and safety rules, then export native configuration files for multiple AI coding tools.
-
-### Supported Targets
-
-| Tool | Config Format | Output Files |
-|------|-------------|--------------|
-| Claude Code | JSON + Markdown | `.claude/settings.json`, `CLAUDE.md` |
-| Cursor | MDC + Rules | `.cursorrules`, `.cursor/rules/harnesskit.mdc` |
-| Aider | YAML + Markdown | `.aider.conf.yml`, `.aider.conventions.md` |
-| Codex CLI | TOML + JSON | `.codex/config.toml`, `codex.json` |
-
-### HarnessKit Features
-
-**Tool Catalog**: Browse 180+ tools and commands from Claude Code's ecosystem, organized by category (shell, file operations, search, web, MCP, git, etc.)
-
-**Permission System**: Three levels per tool: `allow` (no confirmation), `ask` (user confirms), `deny` (blocked entirely)
-
-**Security Layer**: Automatic detection of dangerous commands (`rm -rf /`, fork bombs, `dd`), secrets in file writes (API keys, tokens, passwords), and writes to protected files (`.env`, `.secrets`, `credentials.json`)
-
-**Presets**: Pre built configurations for common scenarios: `default`, `strict`, `permissive`, `readonly`, `data-science`
-
-### HarnessKit Commands
-
-```bash
-python -m harnesskit bootstrap       # interactive setup wizard
-python -m harnesskit catalog         # browse the tool catalog
-python -m harnesskit show            # display current configuration
-python -m harnesskit permissions     # view/modify tool permissions
-python -m harnesskit security        # view/modify security settings
-python -m harnesskit preset          # apply a preset configuration
-python -m harnesskit adapt           # export to your target CLI tool
-python -m harnesskit validate        # check configuration for errors
-python -m harnesskit install-hooks   # install Claude Code enforcement hooks
-```
-
 ## Technical Details
 
 **Python Version**: 3.10+
 
 **External Dependencies**: None. Everything uses Python's standard library (json, pathlib, dataclasses, argparse, datetime, shutil).
 
-**Test Suite**: 191 tests covering both Phantom Agent and HarnessKit. Run with:
+**Test Suite**: 48 tests covering all Phantom Agent functionality. Run with:
 
 ```bash
 python -m pytest tests/ -v
