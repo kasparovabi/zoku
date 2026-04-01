@@ -533,15 +533,23 @@ class TestAdapters(unittest.TestCase):
 
     def test_adapt_cursor(self):
         result = adapt(self._make_config(), "cursor")
-        self.assertEqual(len(result.files), 1)
-        self.assertEqual(result.files[0][0], ".cursorrules")
+        self.assertEqual(len(result.files), 2)
+        paths = [f[0] for f in result.files]
+        self.assertIn(".cursorrules", paths)
+        self.assertIn(".cursor/rules/harnesskit.mdc", paths)
         content = result.files[0][1]
         self.assertIn("test-agent", content)
         self.assertIn("BashTool", content)
 
+    def test_cursor_mdc_format(self):
+        result = adapt(self._make_config(), "cursor")
+        mdc_content = next(c for p, c in result.files if ".mdc" in p)
+        self.assertIn("alwaysApply: true", mdc_content)
+        self.assertIn("---", mdc_content)
+
     def test_cursor_restrictions(self):
         result = adapt(self._make_config(), "cursor")
-        content = result.files[0][1]
+        content = next(c for p, c in result.files if p == ".cursorrules")
         self.assertIn("Restrictions", content)
         self.assertIn("mcp", content.lower())
 
@@ -559,9 +567,21 @@ class TestAdapters(unittest.TestCase):
 
     def test_adapt_codex_cli(self):
         result = adapt(self._make_config(), "codex-cli")
-        self.assertEqual(len(result.files), 1)
-        self.assertEqual(result.files[0][0], "codex.json")
-        data = json.loads(result.files[0][1])
+        self.assertEqual(len(result.files), 2)
+        paths = [f[0] for f in result.files]
+        self.assertIn(".codex/config.toml", paths)
+        self.assertIn("codex.json", paths)
+
+    def test_codex_toml_format(self):
+        result = adapt(self._make_config(), "codex-cli")
+        toml_content = next(c for p, c in result.files if ".toml" in p)
+        self.assertIn("model =", toml_content)
+        self.assertIn("approval_mode =", toml_content)
+
+    def test_codex_json_valid(self):
+        result = adapt(self._make_config(), "codex-cli")
+        json_content = next(c for p, c in result.files if p == "codex.json")
+        data = json.loads(json_content)
         self.assertIn("model", data)
         self.assertIn("approval_mode", data)
 
@@ -573,8 +593,8 @@ class TestAdapters(unittest.TestCase):
             .build()
         )
         result = adapt(config, "codex-cli")
-        data = json.loads(result.files[0][1])
-        self.assertEqual(data["approval_mode"], "suggest")
+        toml_content = next(c for p, c in result.files if ".toml" in p)
+        self.assertIn('approval_mode = "suggest"', toml_content)
 
     def test_codex_approval_mode_permissive(self):
         config = (
@@ -584,8 +604,8 @@ class TestAdapters(unittest.TestCase):
             .build()
         )
         result = adapt(config, "codex-cli")
-        data = json.loads(result.files[0][1])
-        self.assertEqual(data["approval_mode"], "full-auto")
+        toml_content = next(c for p, c in result.files if ".toml" in p)
+        self.assertIn('approval_mode = "full-auto"', toml_content)
 
     def test_adapt_unknown_target(self):
         with self.assertRaises(ValueError):
