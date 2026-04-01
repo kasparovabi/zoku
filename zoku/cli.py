@@ -140,24 +140,41 @@ def cmd_traces(args: argparse.Namespace) -> int:
     return 0
 
 
+def _check_installed(settings_path: Path) -> bool:
+    """Check if Zoku hooks are installed in a settings.json file."""
+    if not settings_path.is_file():
+        return False
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+        hooks = data.get("hooks", {})
+        for entries in hooks.values():
+            for entry in entries:
+                for hook in entry.get("hooks", []):
+                    if "zoku" in hook.get("command", "").lower():
+                        return True
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        pass
+    return False
+
+
 def cmd_status(args: argparse.Namespace) -> int:
     project_dir = args.project_dir or "."
     zoku_dir = _zoku_dir(project_dir)
-    settings_path = Path(project_dir).resolve() / ".claude" / "settings.json"
 
-    # Check installation
-    installed = False
-    if settings_path.is_file():
-        try:
-            data = json.loads(settings_path.read_text(encoding="utf-8"))
-            hooks = data.get("hooks", {})
-            for entries in hooks.values():
-                for entry in entries:
-                    for hook in entry.get("hooks", []):
-                        if "zoku" in hook.get("command", "").lower():
-                            installed = True
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            pass
+    # Check both local and global settings
+    local_settings = Path(project_dir).resolve() / ".claude" / "settings.json"
+    global_settings = Path.home() / ".claude" / "settings.json"
+
+    local_installed = _check_installed(local_settings)
+    global_installed = _check_installed(global_settings)
+    installed = local_installed or global_installed
+
+    if local_installed:
+        scope = "project"
+    elif global_installed:
+        scope = "global"
+    else:
+        scope = ""
 
     traces = load_all_traces(project_dir)
     patterns = load_patterns(project_dir)
@@ -165,7 +182,8 @@ def cmd_status(args: argparse.Namespace) -> int:
 
     _print("Zoku Status")
     _print("=" * 40)
-    _print(f"  Installed:     {'Yes' if installed else 'No'}")
+    install_str = f"Yes ({scope})" if installed else "No"
+    _print(f"  Installed:     {install_str}")
     _print(f"  Data dir:      {zoku_dir}")
     _print(f"  Sessions:      {len(traces)}")
     _print(f"  Total actions: {total_actions}")
