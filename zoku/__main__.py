@@ -1,4 +1,4 @@
-"""Allow running Deja as ``python -m deja``."""
+"""Allow running Zoku as ``python -m zoku``."""
 
 import sys
 from .cli import main

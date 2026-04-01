@@ -1,4 +1,4 @@
-"""Deja installer for Claude Code hooks."""
+"""Zoku installer for Claude Code hooks."""
 
 from __future__ import annotations
 
@@ -10,12 +10,16 @@ from pathlib import Path
 
 
 def _python_command() -> str:
-    """Return the correct python command for the current platform.
+    """Return the Python executable used to install Zoku.
 
-    On Windows ``python3`` usually doesn't exist — ``python`` is the
-    standard command.  On macOS / Linux both work but ``python3`` is
-    the safer default.
+    Uses ``sys.executable`` so hooks always call the same Python that
+    has Zoku installed — this works correctly with pip, pipx, and venvs.
+    Falls back to ``python3`` / ``python`` if ``sys.executable`` is
+    unavailable.
     """
+    exe = sys.executable
+    if exe:
+        return exe
     if platform.system() == "Windows":
         return "python"
     return "python3"
@@ -32,9 +36,9 @@ def _build_hook_settings() -> dict:
                     "hooks": [
                         {
                             "type": "command",
-                            "command": f"{py} -m deja.hooks post-tool-use",
+                            "command": f"{py} -m zoku.hooks post-tool-use",
                             "timeout": 5,
-                            "statusMessage": "Deja: recording..."
+                            "statusMessage": "Zoku: recording..."
                         }
                     ]
                 }
@@ -45,9 +49,9 @@ def _build_hook_settings() -> dict:
                     "hooks": [
                         {
                             "type": "command",
-                            "command": f"{py} -m deja.hooks stop",
+                            "command": f"{py} -m zoku.hooks stop",
                             "timeout": 15,
-                            "statusMessage": "Deja: analysing patterns..."
+                            "statusMessage": "Zoku: analysing patterns..."
                         }
                     ]
                 }
@@ -58,9 +62,9 @@ def _build_hook_settings() -> dict:
                     "hooks": [
                         {
                             "type": "command",
-                            "command": f"{py} -m deja.hooks session-start",
+                            "command": f"{py} -m zoku.hooks session-start",
                             "timeout": 5,
-                            "statusMessage": "Deja: loading workflows..."
+                            "statusMessage": "Zoku: loading workflows..."
                         }
                     ]
                 }
@@ -73,13 +77,13 @@ def _build_hook_settings() -> dict:
 HOOK_SETTINGS = _build_hook_settings()
 
 
-def _is_deja_entry(entry: dict) -> bool:
+def _is_zoku_entry(entry: dict) -> bool:
     for hook in entry.get("hooks", []):
         cmd = hook.get("command", "")
-        if "deja" in cmd.lower():
+        if "zoku" in cmd.lower():
             return True
         status = hook.get("statusMessage", "")
-        if "Deja" in status:
+        if "Zoku" in status:
             return True
     return False
 
@@ -94,17 +98,17 @@ def _global_settings_path() -> Path:
     return home / ".claude" / "settings.json"
 
 
-def _global_deja_dir() -> Path:
-    """Return the global Deja data directory.
+def _global_zoku_dir() -> Path:
+    """Return the global Zoku data directory.
 
-    - Linux / macOS: ``~/.deja/``
-    - Windows:       ``%USERPROFILE%\\.deja\\``
+    - Linux / macOS: ``~/.zoku/``
+    - Windows:       ``%USERPROFILE%\\.zoku\\``
     """
-    return Path.home() / ".deja"
+    return Path.home() / ".zoku"
 
 
 def install(project_dir: str | Path = ".", *, global_install: bool = False) -> list[str]:
-    """Install Deja hooks into Claude Code settings.
+    """Install Zoku hooks into Claude Code settings.
 
     Parameters
     ----------
@@ -120,18 +124,18 @@ def install(project_dir: str | Path = ".", *, global_install: bool = False) -> l
 
     if global_install:
         settings_path = _global_settings_path()
-        deja_dir = _global_deja_dir()
+        zoku_dir = _global_zoku_dir()
     else:
         root = Path(project_dir).resolve()
         settings_path = root / ".claude" / "settings.json"
-        deja_dir = root / ".deja"
+        zoku_dir = root / ".zoku"
 
     settings_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Create .deja dir
-    deja_dir.mkdir(parents=True, exist_ok=True)
-    (deja_dir / "traces").mkdir(exist_ok=True)
-    actions.append(f"Created {deja_dir}")
+    # Create .zoku dir
+    zoku_dir.mkdir(parents=True, exist_ok=True)
+    (zoku_dir / "traces").mkdir(exist_ok=True)
+    actions.append(f"Created {zoku_dir}")
 
     # Merge into settings.json
     existing: dict = {}
@@ -146,7 +150,7 @@ def install(project_dir: str | Path = ".", *, global_install: bool = False) -> l
         if event_name not in existing_hooks:
             existing_hooks[event_name] = entries
         else:
-            cleaned = [e for e in existing_hooks[event_name] if not _is_deja_entry(e)]
+            cleaned = [e for e in existing_hooks[event_name] if not _is_zoku_entry(e)]
             cleaned.extend(entries)
             existing_hooks[event_name] = cleaned
 
@@ -161,7 +165,7 @@ def install(project_dir: str | Path = ".", *, global_install: bool = False) -> l
 
 
 def uninstall(project_dir: str | Path = ".", *, global_install: bool = False) -> list[str]:
-    """Remove Deja hooks from Claude Code settings."""
+    """Remove Zoku hooks from Claude Code settings."""
     if global_install:
         settings_path = _global_settings_path()
     else:
@@ -180,7 +184,7 @@ def uninstall(project_dir: str | Path = ".", *, global_install: bool = False) ->
     hooks = data.get("hooks", {})
     cleaned: dict = {}
     for event_name, entries in hooks.items():
-        remaining = [e for e in entries if not _is_deja_entry(e)]
+        remaining = [e for e in entries if not _is_zoku_entry(e)]
         if remaining:
             cleaned[event_name] = remaining
 

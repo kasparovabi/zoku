@@ -6,7 +6,7 @@ detector analyses.
 
 Storage layout::
 
-    .deja/
+    .zoku/
         traces/
             2026-04-01_abc123.jsonl   # one file per session
         patterns.json                  # discovered workflow patterns
@@ -79,20 +79,20 @@ class SessionTrace:
 # Storage
 # ---------------------------------------------------------------------------
 
-_DEJA_DIR_ENV = "DEJA_DATA_DIR"
+_ZOKU_DIR_ENV = "ZOKU_DATA_DIR"
 
 
-def _deja_dir(cwd: str | None = None) -> Path:
-    env = os.environ.get(_DEJA_DIR_ENV)
+def _zoku_dir(cwd: str | None = None) -> Path:
+    env = os.environ.get(_ZOKU_DIR_ENV)
     if env:
         return Path(env)
     base = Path(cwd) if cwd else Path.cwd()
-    local = base / ".deja"
-    # If local .deja dir exists, prefer it (project-level install).
-    # Otherwise fall back to global ~/.deja if it exists.
+    local = base / ".zoku"
+    # If local .zoku dir exists, prefer it (project-level install).
+    # Otherwise fall back to global ~/.zoku if it exists.
     if local.is_dir():
         return local
-    global_dir = Path.home() / ".deja"
+    global_dir = Path.home() / ".zoku"
     if global_dir.is_dir():
         return global_dir
     # Default to local (will be created on install)
@@ -100,7 +100,7 @@ def _deja_dir(cwd: str | None = None) -> Path:
 
 
 def _traces_dir(cwd: str | None = None) -> Path:
-    d = _deja_dir(cwd) / "traces"
+    d = _zoku_dir(cwd) / "traces"
     d.mkdir(parents=True, exist_ok=True)
     return d
 

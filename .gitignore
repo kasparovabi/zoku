@@ -1,6 +1,9 @@
 __pycache__/
 archive/
 .claude/
-.deja/
+.zoku/
 .port_sessions/
 *.pyc
+*.egg-info/
+dist/
+build/

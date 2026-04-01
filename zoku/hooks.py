@@ -1,4 +1,4 @@
-"""Deja hook handlers for Claude Code.
+"""Zoku hook handlers for Claude Code.
 
 Three hooks run at different points in the Claude Code lifecycle:
 
@@ -8,9 +8,9 @@ Three hooks run at different points in the Claude Code lifecycle:
 
 Usage from shell scripts::
 
-    echo "$INPUT" | python -m deja.hooks post-tool-use
-    echo "$INPUT" | python -m deja.hooks stop
-    echo "$INPUT" | python -m deja.hooks session-start
+    echo "$INPUT" | python -m zoku.hooks post-tool-use
+    echo "$INPUT" | python -m zoku.hooks stop
+    echo "$INPUT" | python -m zoku.hooks session-start
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def handle_stop(event: dict) -> dict:
 
     # Build a message for the user
     lines = [
-        "[Deja] New workflow patterns discovered:",
+        "[Zoku] New workflow patterns discovered:",
         "",
     ]
     for i, p in enumerate(new_patterns[:5], 1):
@@ -84,7 +84,7 @@ def handle_stop(event: dict) -> dict:
                 lines.append(f"     Example: {' -> '.join(examples)}")
         lines.append("")
 
-    lines.append("Run `python -m deja patterns` to see all discovered workflows.")
+    lines.append("Run `zoku patterns` to see all discovered workflows.")
 
     return {"additionalContext": "\n".join(lines)}
 
@@ -102,7 +102,7 @@ def handle_session_start(event: dict) -> dict:
         return {}
 
     lines = [
-        f"[Deja] {len(patterns)} workflow pattern(s) detected from your previous sessions:",
+        f"[Zoku] {len(patterns)} workflow pattern(s) detected from your previous sessions:",
         "",
     ]
     for i, p in enumerate(patterns[:5], 1):
@@ -123,7 +123,7 @@ def handle_session_start(event: dict) -> dict:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: python -m deja.hooks <post-tool-use|stop|session-start>",
+        print("Usage: python -m zoku.hooks <post-tool-use|stop|session-start>",
               file=sys.stderr)
         sys.exit(1)
 

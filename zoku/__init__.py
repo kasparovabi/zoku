@@ -1,4 +1,4 @@
-"""Deja — invisible automation layer for Claude Code.
+"""Zoku — invisible automation layer for Claude Code.
 
 Watches every tool action, detects repeated patterns across sessions,
 and suggests automating them as replayable workflows.
