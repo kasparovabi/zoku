@@ -1,65 +1,241 @@
-# Phantom Agent + HarnessKit
+# Phantom Agent
 
-Two open-source tools that extend Claude Code with invisible automation and no-code configuration.
+**The invisible automation layer for Claude Code.**
 
-## Phantom Agent
+Phantom Agent is an open source Claude Code hook that runs silently in the background while you work. It watches every action you take across sessions, discovers repeated patterns in your workflow, and tells you about them so you can automate the boring parts.
 
-An invisible Claude Code hook that silently watches your actions, detects repeated patterns across sessions, and suggests automating them as workflows.
+You don't configure anything. You don't change how you work. You just install it once and forget about it. Phantom does the rest.
 
-### How it works
+## The Problem
 
-1. **Records** every tool action (file reads, edits, commands) via PostToolUse hook
-2. **Analyses** patterns when a session ends via Stop hook
-3. **Suggests** discovered workflows when a new session starts via SessionStart hook
+Every developer has habits they don't notice. You grep for something, open the file, edit it, run the tests, then fix the lint errors. You do this ten times a day without thinking about it. Multiply that across weeks and you're spending hours on sequences that could be a single command.
 
-### Quick start
+The issue is that nobody sits down and audits their own workflow. It's tedious, it's invisible, and honestly most people don't even realize they're repeating themselves.
+
+## What Phantom Agent Does
+
+Phantom hooks into Claude Code's event system and records every tool action: file reads, edits, searches, bash commands, everything. It stores these as session traces. When a session ends, Phantom runs a pattern detection algorithm across all your recorded sessions. It looks for contiguous subsequences of tool usage that appear in two or more sessions.
+
+When you start a new session, Phantom loads the patterns it found and injects them into Claude's context. Claude now knows "hey, this user frequently does Grep then Read then Edit then Bash then Bash" and can proactively suggest or execute that workflow.
+
+### How the Detection Works
+
+1. Every `PostToolUse` event is recorded as an `Action` with the tool name, a short input summary, timestamp, and session ID
+2. Actions within a session form a `SessionTrace`, which is essentially an ordered list of tool names
+3. The detector extracts all contiguous subsequences of length 3 to 15 from each session
+4. It counts how many *distinct* sessions each subsequence appears in
+5. Subsequences that appear in 2+ sessions become candidate patterns
+6. Strict subsets of longer patterns are removed (if "A B C" is always part of "A B C D", only the longer one survives)
+7. Results are sorted by frequency first, then by length
+
+No machine learning, no cloud calls, no external dependencies. Pure algorithmic analysis using Python's standard library.
+
+### What Gets Stored
+
+All data lives in a `.phantom/` directory (local or global depending on your install):
+
+```
+.phantom/
+    traces/
+        2026-04-01_session123.jsonl    # one JSONL file per session
+        2026-04-02_session456.jsonl
+    patterns.json                       # discovered workflow patterns
+```
+
+Each line in a trace file is a JSON object:
+
+```json
+{"tool": "Grep", "input_summary": "grep:TODO", "timestamp": "2026-04-01T14:30:00+00:00", "session_id": "abc123", "success": true}
+{"tool": "Read", "input_summary": "/src/main.py", "timestamp": "2026-04-01T14:30:05+00:00", "session_id": "abc123", "success": true}
+{"tool": "Edit", "input_summary": "edit:/src/main.py", "timestamp": "2026-04-01T14:30:15+00:00", "session_id": "abc123", "success": true}
+```
+
+Nothing sensitive is stored. Input summaries are truncated to 200 characters and only contain file paths or command previews, never file contents.
+
+## Installation
+
+### Global Install (Recommended)
+
+Install once, works in every project:
 
 ```bash
 git clone https://github.com/kasparovabi/claw-code.git
 cd claw-code
-git checkout claude/analyze-repo-content-aZ3OC
-
-# Install globally (works in ALL projects)
 python -m phantom install --global
+```
 
-# Or install for current project only
+This writes hooks to `~/.claude/settings.json` and creates `~/.phantom/` for data storage.
+
+### Per Project Install
+
+If you only want Phantom active in a specific project:
+
+```bash
+cd your-project
 python -m phantom install
 ```
 
-Then just use Claude Code normally. After 2-3 sessions, check:
+This writes to `your-project/.claude/settings.json` and creates `your-project/.phantom/`.
+
+### Windows
+
+Phantom automatically detects Windows and uses `python` instead of `python3` in hook commands. No manual configuration needed.
+
+### Updating
+
+If you installed a previous version:
 
 ```bash
-python -m phantom patterns    # See discovered workflows
-python -m phantom status      # Overview
-python -m phantom traces      # Session history
-python -m phantom analyse     # Force analysis now
+cd claw-code
+git pull origin claude/analyze-repo-content-aZ3OC
+python -m phantom uninstall --global
+python -m phantom install --global
 ```
 
-### Windows note
+### Uninstalling
 
-On Windows, Phantom automatically uses `python` instead of `python3`.
+```bash
+python -m phantom uninstall --global    # remove global hooks
+python -m phantom uninstall             # remove project hooks
+python -m phantom clear                 # delete all recorded data
+```
+
+## Usage
+
+There is no usage. That's the point.
+
+Install it and use Claude Code exactly as you always do. Phantom is completely invisible during your sessions. It only surfaces information when:
+
+1. A session **ends** and new patterns are found (logged silently)
+2. A session **starts** and previously discovered patterns exist (injected as context for Claude)
+
+### CLI Commands
+
+To inspect what Phantom has learned:
+
+```bash
+python -m phantom status      # installation status, session count, pattern count
+python -m phantom patterns    # list all discovered workflow patterns with details
+python -m phantom traces      # show recorded sessions and their tool sequences
+python -m phantom analyse     # force pattern analysis right now (normally happens on session end)
+python -m phantom clear       # wipe all traces and patterns
+```
+
+### Example Output
+
+After a few sessions, `python -m phantom patterns` might show:
+
+```
+Discovered 3 workflow pattern(s):
+
+  Pattern 1: Grep > Read > Edit > Bash > Bash
+    Steps:    Grep -> Read -> Edit -> Bash -> Bash
+    Seen in:  4 sessions
+    Example:
+      1. [Grep] grep:handleSubmit
+      2. [Read] /src/components/Form.tsx
+      3. [Edit] edit:/src/components/Form.tsx
+      4. [Bash] npm test
+      5. [Bash] npm run lint
+
+  Pattern 2: Read > Edit > Read > Edit
+    Steps:    Read -> Edit -> Read -> Edit
+    Seen in:  3 sessions
+
+  Pattern 3: Glob > Read > Edit > Bash
+    Steps:    Glob -> Read -> Edit -> Bash
+    Seen in:  2 sessions
+```
+
+## Architecture
+
+```
+phantom/
+    __init__.py         # package metadata (version 0.1.0)
+    __main__.py         # entry point: python -m phantom
+    cli.py              # 7 CLI commands (install, uninstall, patterns, traces, status, analyse, clear)
+    recorder.py         # Action/SessionTrace dataclasses, JSONL storage, summarise_input()
+    detector.py         # Pattern detection: subsequence extraction, frequency counting, subset pruning
+    hooks.py            # Claude Code hook handlers (PostToolUse, Stop, SessionStart)
+    installer.py        # Hook registration into .claude/settings.json (local + global)
+```
+
+### Hook Integration
+
+Phantom registers three hooks in Claude Code's settings:
+
+| Event | What Phantom Does | Timeout |
+|-------|------------------|---------|
+| `PostToolUse` | Records the action to the session's JSONL trace file | 5s |
+| `Stop` | Loads all traces, runs pattern detection, saves new patterns | 15s |
+| `SessionStart` | Loads saved patterns and injects them as context for Claude | 5s |
+
+Hooks communicate via stdin/stdout JSON, following Claude Code's hook protocol. Exit code 0 means success (parse the JSON output), exit code 2 means blocking error.
 
 ## HarnessKit
 
-A no-code agent harness configuration toolkit. Define tool permissions, security policies, and presets — then export native config for Claude Code, Cursor, Aider, or Codex CLI.
+This repo also includes **HarnessKit**, a no code agent harness configuration toolkit. It lets you define tool permissions, security policies, and safety rules, then export native configuration files for multiple AI coding tools.
+
+### Supported Targets
+
+| Tool | Config Format | Output Files |
+|------|-------------|--------------|
+| Claude Code | JSON + Markdown | `.claude/settings.json`, `CLAUDE.md` |
+| Cursor | MDC + Rules | `.cursorrules`, `.cursor/rules/harnesskit.mdc` |
+| Aider | YAML + Markdown | `.aider.conf.yml`, `.aider.conventions.md` |
+| Codex CLI | TOML + JSON | `.codex/config.toml`, `codex.json` |
+
+### HarnessKit Features
+
+**Tool Catalog**: Browse 180+ tools and commands from Claude Code's ecosystem, organized by category (shell, file operations, search, web, MCP, git, etc.)
+
+**Permission System**: Three levels per tool: `allow` (no confirmation), `ask` (user confirms), `deny` (blocked entirely)
+
+**Security Layer**: Automatic detection of dangerous commands (`rm -rf /`, fork bombs, `dd`), secrets in file writes (API keys, tokens, passwords), and writes to protected files (`.env`, `.secrets`, `credentials.json`)
+
+**Presets**: Pre built configurations for common scenarios: `default`, `strict`, `permissive`, `readonly`, `data-science`
+
+### HarnessKit Commands
 
 ```bash
-python -m harnesskit bootstrap    # Interactive setup
-python -m harnesskit catalog      # Browse available tools
-python -m harnesskit adapt        # Export to your CLI tool
+python -m harnesskit bootstrap       # interactive setup wizard
+python -m harnesskit catalog         # browse the tool catalog
+python -m harnesskit show            # display current configuration
+python -m harnesskit permissions     # view/modify tool permissions
+python -m harnesskit security        # view/modify security settings
+python -m harnesskit preset          # apply a preset configuration
+python -m harnesskit adapt           # export to your target CLI tool
+python -m harnesskit validate        # check configuration for errors
+python -m harnesskit install-hooks   # install Claude Code enforcement hooks
 ```
 
-## Requirements
+## Technical Details
 
-- Python 3.10+
-- Claude Code CLI
-- Zero external dependencies (stdlib only)
+**Python Version**: 3.10+
 
-## Running tests
+**External Dependencies**: None. Everything uses Python's standard library (json, pathlib, dataclasses, argparse, datetime, shutil).
+
+**Test Suite**: 191 tests covering both Phantom Agent and HarnessKit. Run with:
 
 ```bash
 python -m pytest tests/ -v
 ```
+
+**Data Safety**: Phantom never modifies your code, never sends data anywhere, and never interferes with Claude Code's normal operation. It only *reads* hook events and *writes* to its own `.phantom/` directory.
+
+## Roadmap
+
+This project is part of a larger vision for AI coding tool infrastructure:
+
+**Phantom Agent v2**: Workflow replay (not just detection, but execution), cross project pattern aggregation, pattern sharing between team members
+
+**AgentBlackBox**: SaaS audit trail for AI agent sessions. Full token cost tracking, decision tree visualization, compliance reporting for enterprises that need to prove what their AI agents did and why.
+
+**MirrorMode**: Cross agent workflow translation. Record a workflow in Claude Code, replay it in Cursor or Aider. Universal session format that works across all AI coding tools.
+
+## Contributing
+
+This project is in active development. If you're interested in contributing, the codebase is intentionally simple and well tested. Every module is under 200 lines and uses no external dependencies.
 
 ## License
 
