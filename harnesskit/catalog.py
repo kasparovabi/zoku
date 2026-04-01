@@ -17,7 +17,7 @@ from typing import Literal
 # Paths
 # ---------------------------------------------------------------------------
 
-_REF_DIR = Path(__file__).resolve().parent.parent / "src" / "reference_data"
+_REF_DIR = Path(__file__).resolve().parent / "data"
 _TOOLS_SNAPSHOT = _REF_DIR / "tools_snapshot.json"
 _COMMANDS_SNAPSHOT = _REF_DIR / "commands_snapshot.json"
 

@@ -1,4 +1,6 @@
 __pycache__/
 archive/
-.claude/harnesskit-logs/
+.claude/
+.phantom/
 .port_sessions/
+*.pyc

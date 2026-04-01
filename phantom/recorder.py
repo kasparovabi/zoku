@@ -87,7 +87,16 @@ def _phantom_dir(cwd: str | None = None) -> Path:
     if env:
         return Path(env)
     base = Path(cwd) if cwd else Path.cwd()
-    return base / ".phantom"
+    local = base / ".phantom"
+    # If local .phantom dir exists, prefer it (project-level install).
+    # Otherwise fall back to global ~/.phantom if it exists.
+    if local.is_dir():
+        return local
+    global_dir = Path.home() / ".phantom"
+    if global_dir.is_dir():
+        return global_dir
+    # Default to local (will be created on install)
+    return local
 
 
 def _traces_dir(cwd: str | None = None) -> Path:

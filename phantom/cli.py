@@ -27,10 +27,15 @@ def _print(msg: str = "") -> None:
 
 
 def cmd_install(args: argparse.Namespace) -> int:
+    is_global = getattr(args, "global_install", False)
     project_dir = args.project_dir or "."
-    _print("Installing Phantom Agent hooks into Claude Code...")
+
+    if is_global:
+        _print("Installing Phantom Agent hooks GLOBALLY (all projects)...")
+    else:
+        _print("Installing Phantom Agent hooks into Claude Code...")
     _print()
-    actions = install(project_dir)
+    actions = install(project_dir, global_install=is_global)
     for a in actions:
         _print(f"  {a}")
     _print()
@@ -39,12 +44,16 @@ def cmd_install(args: argparse.Namespace) -> int:
     _print()
     _print("You don't need to do anything — just use Claude Code normally.")
     _print("After a few sessions, run: python -m phantom patterns")
+    if not is_global:
+        _print()
+        _print("Tip: Use --global to install once for ALL projects.")
     return 0
 
 
 def cmd_uninstall(args: argparse.Namespace) -> int:
+    is_global = getattr(args, "global_install", False)
     project_dir = args.project_dir or "."
-    actions = uninstall(project_dir)
+    actions = uninstall(project_dir, global_install=is_global)
     for a in actions:
         _print(f"  {a}")
     return 0
@@ -201,6 +210,14 @@ def build_parser() -> argparse.ArgumentParser:
     ]:
         p = sub.add_parser(name, help=help_text)
         p.add_argument("-p", "--project-dir", help="Project directory (default: cwd)")
+        if name in ("install", "uninstall"):
+            p.add_argument(
+                "-g", "--global",
+                dest="global_install",
+                action="store_true",
+                default=False,
+                help="Install/uninstall globally (~/.claude/settings.json) for all projects",
+            )
 
     return parser
 
