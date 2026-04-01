@@ -284,6 +284,41 @@ def cmd_adapt(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_install(args: argparse.Namespace) -> int:
+    """Install HarnessKit hooks into Claude Code."""
+    from .hooks.installer import install_hooks
+    project_dir = args.project_dir or "."
+    _print("Installing HarnessKit hooks into Claude Code...")
+    _print()
+    actions = install_hooks(project_dir)
+    for action in actions:
+        _print(f"  {action}")
+    _print()
+    _print("HarnessKit is now active as a Claude Code hook.")
+    _print("It will enforce your .harnesskit.json policy on every tool call.")
+    _print()
+    _print("Next steps:")
+    _print("  1. Create a config: python -m harnesskit preset dev-assistant")
+    _print("  2. Start Claude Code — HarnessKit hooks will load automatically")
+    _print("  3. Check /hooks in Claude Code to verify")
+    return 0
+
+
+def cmd_uninstall(args: argparse.Namespace) -> int:
+    """Remove HarnessKit hooks from Claude Code."""
+    from .hooks.installer import uninstall_hooks
+    project_dir = args.project_dir or "."
+    _print("Removing HarnessKit hooks from Claude Code...")
+    _print()
+    actions = uninstall_hooks(project_dir)
+    if actions:
+        for action in actions:
+            _print(f"  {action}")
+    else:
+        _print("  No HarnessKit hooks found.")
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -345,6 +380,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_adapt.add_argument("-d", "--output-dir", default=".",
                          help="Output directory (default: current dir)")
 
+    # install
+    p_install = sub.add_parser("install", help="Install HarnessKit hooks into Claude Code")
+    p_install.add_argument("-p", "--project-dir", help="Project directory (default: cwd)")
+
+    # uninstall
+    p_uninstall = sub.add_parser("uninstall", help="Remove HarnessKit hooks from Claude Code")
+    p_uninstall.add_argument("-p", "--project-dir", help="Project directory (default: cwd)")
+
     return parser
 
 
@@ -360,6 +403,8 @@ def main(argv: list[str] | None = None) -> int:
         "presets": cmd_presets_list,
         "stages": cmd_stages,
         "adapt": cmd_adapt,
+        "install": cmd_install,
+        "uninstall": cmd_uninstall,
     }
 
     if args.command in handlers:
