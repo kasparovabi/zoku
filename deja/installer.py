@@ -10,12 +10,16 @@ from pathlib import Path
 
 
 def _python_command() -> str:
-    """Return the correct python command for the current platform.
+    """Return the Python executable used to install Deja.
 
-    On Windows ``python3`` usually doesn't exist — ``python`` is the
-    standard command.  On macOS / Linux both work but ``python3`` is
-    the safer default.
+    Uses ``sys.executable`` so hooks always call the same Python that
+    has Deja installed — this works correctly with pip, pipx, and venvs.
+    Falls back to ``python3`` / ``python`` if ``sys.executable`` is
+    unavailable.
     """
+    exe = sys.executable
+    if exe:
+        return exe
     if platform.system() == "Windows":
         return "python"
     return "python3"

@@ -9,17 +9,25 @@ description = "Invisible automation layer for Claude Code. Watches your sessions
 requires-python = ">=3.10"
 license = "MIT"
 authors = []
+keywords = ["claude-code", "automation", "workflow", "hooks", "patterns"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = []
+readme = "README.md"
 
 [project.urls]
 Homepage = "https://github.com/kasparovabi/deja"
+Repository = "https://github.com/kasparovabi/deja"
+Issues = "https://github.com/kasparovabi/deja/issues"
 
 [project.scripts]
 deja = "deja.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["deja*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

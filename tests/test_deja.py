@@ -444,6 +444,15 @@ class TestCLI(_TempProjectMixin, unittest.TestCase):
         traces = load_all_traces()
         self.assertEqual(len(traces), 0)
 
+    def test_setup_command(self):
+        ret = main(["setup"])
+        self.assertEqual(ret, 0)
+        # setup installs globally — verify ~/.claude/settings.json was written
+        global_settings = Path.home() / ".claude" / "settings.json"
+        if global_settings.is_file():
+            data = json.loads(global_settings.read_text())
+            self.assertIn("hooks", data)
+
     def test_no_command_shows_help(self):
         ret = main([])
         self.assertEqual(ret, 0)

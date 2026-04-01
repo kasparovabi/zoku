@@ -63,39 +63,51 @@ Nothing sensitive is stored. Input summaries are truncated to 200 characters and
 
 ## Installation
 
-### Global Install (Recommended)
-
-Install once, works in every project:
+### Quick Install (Recommended)
 
 ```bash
-git clone https://github.com/kasparovabi/deja.git
-cd deja
-python -m deja install --global
+pip install deja && deja setup
 ```
 
-This writes hooks to `~/.claude/settings.json` and creates `~/.deja/` for data storage.
+That's it. Two commands, zero configuration. Deja installs globally and works in every project.
 
-### Per Project Install
+### Install from Claude Code
+
+Already inside a Claude Code session? Just ask Claude:
+
+> Install deja for me: `pip install deja && deja setup`
+
+Claude will run it and Deja starts working immediately — in that session and every future one.
+
+### Install from GitHub (latest development version)
+
+```bash
+pip install git+https://github.com/kasparovabi/deja.git && deja setup
+```
+
+### Per-Project Install
 
 If you only want Deja active in a specific project:
 
 ```bash
+pip install deja
 cd your-project
-python -m deja install
+deja install
 ```
 
 This writes to `your-project/.claude/settings.json` and creates `your-project/.deja/`.
 
 ### Windows
 
-Deja automatically detects Windows and uses `python` instead of `python3` in hook commands. No manual configuration needed.
+Deja automatically detects Windows and uses the correct Python path in hook commands. No manual configuration needed.
 
 ### Uninstalling
 
 ```bash
-python -m deja uninstall --global    # remove global hooks
-python -m deja uninstall             # remove project hooks
-python -m deja clear                 # delete all recorded data
+deja uninstall --global    # remove global hooks
+deja uninstall             # remove project hooks
+deja clear                 # delete all recorded data
+pip uninstall deja         # remove the package
 ```
 
 ## Usage
@@ -112,16 +124,16 @@ Install it and use Claude Code exactly as you always do. Deja is completely invi
 To inspect what Deja has learned:
 
 ```bash
-python -m deja status      # installation status, session count, pattern count
-python -m deja patterns    # list all discovered workflow patterns with details
-python -m deja traces      # show recorded sessions and their tool sequences
-python -m deja analyse     # force pattern analysis right now (normally happens on session end)
-python -m deja clear       # wipe all traces and patterns
+deja status      # installation status, session count, pattern count
+deja patterns    # list all discovered workflow patterns with details
+deja traces      # show recorded sessions and their tool sequences
+deja analyse     # force pattern analysis right now (normally happens on session end)
+deja clear       # wipe all traces and patterns
 ```
 
 ### Example Output
 
-After a few sessions, `python -m deja patterns` might show:
+After a few sessions, `deja patterns` might show:
 
 ```
 Discovered 3 workflow pattern(s):
@@ -150,7 +162,7 @@ Discovered 3 workflow pattern(s):
 ```
 deja/
     __init__.py         # package metadata (version 0.1.0)
-    __main__.py         # entry point: python -m deja
+    __main__.py         # entry point: deja
     cli.py              # 7 CLI commands (install, uninstall, patterns, traces, status, analyse, clear)
     recorder.py         # Action/SessionTrace dataclasses, JSONL storage, summarise_input()
     detector.py         # Pattern detection: subsequence extraction, frequency counting, subset pruning

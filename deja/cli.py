@@ -2,13 +2,14 @@
 
 Usage::
 
-    python -m deja install              # Install hooks into Claude Code
-    python -m deja uninstall            # Remove hooks
-    python -m deja patterns             # Show discovered workflow patterns
-    python -m deja traces               # List recorded session traces
-    python -m deja status               # Show Deja status
-    python -m deja analyse              # Force pattern analysis now
-    python -m deja clear                # Clear all recorded data
+    deja install [--global]     # Install hooks into Claude Code
+    deja uninstall [--global]   # Remove hooks
+    deja setup                  # One-command install (global + welcome)
+    deja patterns               # Show discovered workflow patterns
+    deja traces                 # List recorded session traces
+    deja status                 # Show Deja status
+    deja analyse                # Force pattern analysis now
+    deja clear                  # Clear all recorded data
 """
 
 from __future__ import annotations
@@ -24,6 +25,34 @@ from .detector import detect_patterns, save_patterns, load_patterns
 
 def _print(msg: str = "") -> None:
     print(msg, flush=True)
+
+
+def cmd_setup(args: argparse.Namespace) -> int:
+    """One-command setup: install hooks globally and print welcome."""
+    _print()
+    _print("  Deja — invisible automation layer for Claude Code")
+    _print("  " + "=" * 50)
+    _print()
+    actions = install(global_install=True)
+    for a in actions:
+        _print(f"  {a}")
+    _print()
+    _print("  Done! Deja is now active in ALL your projects.")
+    _print()
+    _print("  What happens next:")
+    _print("    - Deja silently records your tool usage across sessions")
+    _print("    - After 2+ sessions, it detects repeated workflow patterns")
+    _print("    - Patterns are injected into Claude's context automatically")
+    _print()
+    _print("  You don't need to do anything — just use Claude Code normally.")
+    _print()
+    _print("  Useful commands:")
+    _print("    deja status      Show installation status")
+    _print("    deja patterns    View discovered workflow patterns")
+    _print("    deja traces      List recorded session traces")
+    _print("    deja uninstall   Remove Deja hooks")
+    _print()
+    return 0
 
 
 def cmd_install(args: argparse.Namespace) -> int:
@@ -43,7 +72,7 @@ def cmd_install(args: argparse.Namespace) -> int:
     _print("It will silently record your actions and discover workflow patterns.")
     _print()
     _print("You don't need to do anything — just use Claude Code normally.")
-    _print("After a few sessions, run: python -m deja patterns")
+    _print("After a few sessions, run: deja patterns")
     if not is_global:
         _print()
         _print("Tip: Use --global to install once for ALL projects.")
@@ -199,6 +228,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command")
 
+    # setup command (no extra args needed)
+    sub.add_parser("setup", help="One-command global install with welcome guide")
+
     for name, help_text in [
         ("install", "Install Deja hooks into Claude Code"),
         ("uninstall", "Remove Deja hooks"),
@@ -227,6 +259,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     handlers = {
+        "setup": cmd_setup,
         "install": cmd_install,
         "uninstall": cmd_uninstall,
         "patterns": cmd_patterns,

@@ -5,3 +5,5 @@ archive/
 .port_sessions/
 *.pyc
 *.egg-info/
+dist/
+build/

@@ -84,7 +84,7 @@ def handle_stop(event: dict) -> dict:
                 lines.append(f"     Example: {' -> '.join(examples)}")
         lines.append("")
 
-    lines.append("Run `python -m deja patterns` to see all discovered workflows.")
+    lines.append("Run `deja patterns` to see all discovered workflows.")
 
     return {"additionalContext": "\n".join(lines)}
 
