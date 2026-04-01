@@ -4,3 +4,4 @@ archive/
 .deja/
 .port_sessions/
 *.pyc
+*.egg-info/
