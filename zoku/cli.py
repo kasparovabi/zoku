@@ -16,11 +16,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 from pathlib import Path
 
 from .installer import install, uninstall
 from .recorder import load_all_traces, _zoku_dir, _traces_dir
 from .detector import detect_patterns, save_patterns, load_patterns
+
+_CMD = "python -m zoku" if platform.system() == "Windows" else "zoku"
 
 
 def _print(msg: str = "") -> None:
@@ -30,7 +33,7 @@ def _print(msg: str = "") -> None:
 def cmd_setup(args: argparse.Namespace) -> int:
     """One-command setup: install hooks globally and print welcome."""
     _print()
-    _print("  Zoku — invisible automation layer for Claude Code")
+    _print("  Zoku \u2014 invisible automation layer for Claude Code")
     _print("  " + "=" * 50)
     _print()
     actions = install(global_install=True)
@@ -44,13 +47,13 @@ def cmd_setup(args: argparse.Namespace) -> int:
     _print("    - After 2+ sessions, it detects repeated workflow patterns")
     _print("    - Patterns are injected into Claude's context automatically")
     _print()
-    _print("  You don't need to do anything — just use Claude Code normally.")
+    _print("  You don't need to do anything \u2014 just use Claude Code normally.")
     _print()
     _print("  Useful commands:")
-    _print("    zoku status      Show installation status")
-    _print("    zoku patterns    View discovered workflow patterns")
-    _print("    zoku traces      List recorded session traces")
-    _print("    zoku uninstall   Remove Zoku hooks")
+    _print(f"    {_CMD} status      Show installation status")
+    _print(f"    {_CMD} patterns    View discovered workflow patterns")
+    _print(f"    {_CMD} traces      List recorded session traces")
+    _print(f"    {_CMD} uninstall   Remove Zoku hooks")
     _print()
     return 0
 
@@ -71,8 +74,8 @@ def cmd_install(args: argparse.Namespace) -> int:
     _print("Zoku is now active.")
     _print("It will silently record your actions and discover workflow patterns.")
     _print()
-    _print("You don't need to do anything — just use Claude Code normally.")
-    _print("After a few sessions, run: zoku patterns")
+    _print("You don't need to do anything \u2014 just use Claude Code normally.")
+    _print(f"After a few sessions, run: {_CMD} patterns")
     if not is_global:
         _print()
         _print("Tip: Use --global to install once for ALL projects.")
@@ -94,7 +97,7 @@ def cmd_patterns(args: argparse.Namespace) -> int:
 
     if not patterns:
         _print("No workflow patterns discovered yet.")
-        _print("Keep using Claude Code — Zoku will detect patterns after 2+ sessions.")
+        _print("Keep using Claude Code \u2014 Zoku will detect patterns after 2+ sessions.")
         return 0
 
     _print(f"Discovered {len(patterns)} workflow pattern(s):")
@@ -224,7 +227,7 @@ def cmd_clear(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="zoku",
-        description="Zoku — invisible automation layer for Claude Code",
+        description="Zoku \u2014 invisible automation layer for Claude Code",
     )
     sub = parser.add_subparsers(dest="command")
 
