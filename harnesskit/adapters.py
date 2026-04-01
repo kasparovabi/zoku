@@ -1,0 +1,372 @@
+"""Runtime adapters — convert HarnessKit configs to native CLI tool formats.
+
+Each adapter takes a ``HarnessConfig`` and produces the file(s) that a
+specific AI agent CLI expects.  Supported targets:
+
+- **claude-code** — ``.claude/settings.json`` + ``CLAUDE.md``
+- **cursor** — ``.cursorrules``
+- **aider** — ``.aider.conf.yml``
+- **codex-cli** — ``codex.json``
+
+Usage::
+
+    python -m harnesskit adapt config.json --target claude-code --output-dir .
+"""
+
+from __future__ import annotations
+
+import json
+import textwrap
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Literal
+
+from .config import HarnessConfig
+
+TargetName = Literal["claude-code", "cursor", "aider", "codex-cli"]
+
+SUPPORTED_TARGETS: tuple[str, ...] = ("claude-code", "cursor", "aider", "codex-cli")
+
+
+# ---------------------------------------------------------------------------
+# Base adapter
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class AdaptResult:
+    """Files produced by an adapter."""
+    target: str
+    files: tuple[tuple[str, str], ...]  # (relative_path, content) pairs
+
+    def write(self, output_dir: str | Path = ".") -> list[Path]:
+        """Write all produced files under *output_dir*."""
+        root = Path(output_dir)
+        written: list[Path] = []
+        for rel_path, content in self.files:
+            full = root / rel_path
+            full.parent.mkdir(parents=True, exist_ok=True)
+            full.write_text(content, encoding="utf-8")
+            written.append(full)
+        return written
+
+    def preview(self) -> str:
+        """Human-readable preview of what would be written."""
+        lines = [f"Target: {self.target}", f"Files ({len(self.files)}):"]
+        for rel_path, content in self.files:
+            line_count = content.count("\n") + 1
+            lines.append(f"  {rel_path} ({line_count} lines)")
+        return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Claude Code adapter
+# ---------------------------------------------------------------------------
+
+def _adapt_claude_code(config: HarnessConfig) -> AdaptResult:
+    """Generate ``.claude/settings.json`` and ``CLAUDE.md``.
+
+    Claude Code settings.json supports:
+    - permissions.allow / permissions.deny (tool names)
+    - env (environment variables)
+
+    CLAUDE.md provides system-level instructions the agent reads on startup.
+    """
+
+    # --- settings.json ---
+    allowed_tools: list[str] = []
+    denied_tools: list[str] = []
+
+    for rule in config.permissions.rules:
+        target = rule.target
+        if rule.is_prefix:
+            target = rule.target  # Claude Code supports prefix patterns
+        if rule.action == "allow":
+            allowed_tools.append(target)
+        else:
+            denied_tools.append(target)
+
+    settings: dict = {
+        "permissions": {},
+    }
+    if allowed_tools:
+        settings["permissions"]["allow"] = sorted(set(allowed_tools))
+    if denied_tools:
+        settings["permissions"]["deny"] = sorted(set(denied_tools))
+
+    settings_json = json.dumps(settings, indent=2, ensure_ascii=False)
+
+    # --- CLAUDE.md ---
+    claude_md_parts: list[str] = [
+        f"# {config.project_name}",
+        "",
+    ]
+    if config.description:
+        claude_md_parts.append(config.description)
+        claude_md_parts.append("")
+
+    # Tool instructions
+    if config.tools:
+        claude_md_parts.append("## Available Tools")
+        claude_md_parts.append("")
+        for tool in config.tools:
+            claude_md_parts.append(f"- {tool}")
+        claude_md_parts.append("")
+
+    # Command instructions
+    if config.commands:
+        claude_md_parts.append("## Available Commands")
+        claude_md_parts.append("")
+        for cmd in config.commands:
+            claude_md_parts.append(f"- /{cmd}")
+        claude_md_parts.append("")
+
+    # Permission summary
+    claude_md_parts.append("## Permission Policy")
+    claude_md_parts.append("")
+    claude_md_parts.append(f"Default action: **{config.permissions.default_action}**")
+    claude_md_parts.append("")
+    if config.permissions.rules:
+        for rule in config.permissions.rules:
+            icon = "ALLOW" if rule.action == "allow" else "DENY"
+            reason = f" — {rule.reason}" if rule.reason else ""
+            claude_md_parts.append(f"- [{icon}] `{rule.target}`{reason}")
+        claude_md_parts.append("")
+
+    # Model preference
+    if config.model.name:
+        claude_md_parts.append("## Model")
+        claude_md_parts.append("")
+        claude_md_parts.append(f"Preferred model: **{config.model.name}**")
+        if config.model.provider:
+            claude_md_parts.append(f"Provider: {config.model.provider}")
+        claude_md_parts.append("")
+
+    # Footer
+    claude_md_parts.append("---")
+    claude_md_parts.append(f"*Generated by HarnessKit from `{config.project_name}` configuration.*")
+
+    claude_md = "\n".join(claude_md_parts)
+
+    return AdaptResult(
+        target="claude-code",
+        files=(
+            (".claude/settings.json", settings_json),
+            ("CLAUDE.md", claude_md),
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Cursor adapter
+# ---------------------------------------------------------------------------
+
+def _adapt_cursor(config: HarnessConfig) -> AdaptResult:
+    """Generate ``.cursorrules`` file.
+
+    Cursor reads a ``.cursorrules`` file in the project root as system-level
+    instructions.  There is no structured permission system — everything is
+    expressed as natural-language rules.
+    """
+    parts: list[str] = []
+
+    # Identity
+    parts.append(f"You are an AI assistant configured as: {config.project_name}")
+    if config.description:
+        parts.append(f"Description: {config.description}")
+    parts.append("")
+
+    # Tool guidance
+    if config.tools:
+        parts.append("## Allowed Tools")
+        parts.append("You may use the following tools:")
+        for tool in config.tools:
+            parts.append(f"- {tool}")
+        parts.append("")
+
+    # Permission rules as instructions
+    denied = [r for r in config.permissions.rules if r.action == "deny"]
+    allowed = [r for r in config.permissions.rules if r.action == "allow"]
+
+    if denied:
+        parts.append("## Restrictions")
+        parts.append("You must NOT use the following:")
+        for rule in denied:
+            reason = f" ({rule.reason})" if rule.reason else ""
+            parts.append(f"- {rule.target}{reason}")
+        parts.append("")
+
+    if config.permissions.default_action == "deny":
+        parts.append("IMPORTANT: Only use tools and commands that are explicitly listed above.")
+        parts.append("If a tool is not in the allowed list, do not use it.")
+        parts.append("")
+
+    # Model
+    if config.model.name:
+        parts.append(f"## Model Preference")
+        parts.append(f"Use {config.model.name} when available.")
+        parts.append("")
+
+    parts.append(f"---")
+    parts.append(f"Generated by HarnessKit from `{config.project_name}` configuration.")
+
+    return AdaptResult(
+        target="cursor",
+        files=(
+            (".cursorrules", "\n".join(parts)),
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Aider adapter
+# ---------------------------------------------------------------------------
+
+def _adapt_aider(config: HarnessConfig) -> AdaptResult:
+    """Generate ``.aider.conf.yml`` configuration.
+
+    Aider uses a YAML config file with keys like:
+    - model, edit-format, auto-commits, etc.
+
+    Since Aider doesn't have a tool permission system, we express constraints
+    via the conventions file (``.aider.conventions.md``) and config options.
+    """
+    # --- .aider.conf.yml ---
+    yml_lines: list[str] = [
+        f"# HarnessKit configuration for: {config.project_name}",
+        f"# {config.description}" if config.description else "",
+        "",
+    ]
+
+    if config.model.name:
+        yml_lines.append(f"model: {config.model.name}")
+    yml_lines.append("auto-commits: true")
+    yml_lines.append("auto-test: false")
+    yml_lines.append("edit-format: diff")
+    yml_lines.append(f"# Temperature: {config.model.temperature}")
+
+    # Read-only mode if restrictive
+    if config.permissions.default_action == "deny":
+        has_file_write = any(
+            t in ("FileEditTool", "FileWriteTool") for t in config.tools
+        )
+        if not has_file_write:
+            yml_lines.append("")
+            yml_lines.append("# Read-only mode — no file modification tools enabled")
+            yml_lines.append("watch-files: false")
+
+    yml_content = "\n".join(line for line in yml_lines if line is not None)
+
+    # --- .aider.conventions.md ---
+    conv_parts: list[str] = [
+        f"# Conventions for {config.project_name}",
+        "",
+    ]
+    if config.description:
+        conv_parts.append(config.description)
+        conv_parts.append("")
+
+    denied = [r for r in config.permissions.rules if r.action == "deny"]
+    if denied:
+        conv_parts.append("## Restrictions")
+        for rule in denied:
+            reason = f" — {rule.reason}" if rule.reason else ""
+            conv_parts.append(f"- Do NOT use {rule.target}{reason}")
+        conv_parts.append("")
+
+    if config.commands:
+        conv_parts.append("## Workflow Commands")
+        for cmd in config.commands:
+            conv_parts.append(f"- /{cmd}")
+        conv_parts.append("")
+
+    conv_parts.append("---")
+    conv_parts.append(f"*Generated by HarnessKit.*")
+
+    return AdaptResult(
+        target="aider",
+        files=(
+            (".aider.conf.yml", yml_content),
+            (".aider.conventions.md", "\n".join(conv_parts)),
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Codex CLI adapter
+# ---------------------------------------------------------------------------
+
+def _adapt_codex_cli(config: HarnessConfig) -> AdaptResult:
+    """Generate ``codex.json`` for OpenAI Codex CLI.
+
+    Codex CLI reads a codex.json for model, instructions, and approval mode.
+    """
+    # Map permission strictness to Codex approval mode
+    if config.permissions.default_action == "deny":
+        has_shell = "BashTool" in config.tools
+        has_write = "FileWriteTool" in config.tools or "FileEditTool" in config.tools
+        if not has_shell and not has_write:
+            approval_mode = "suggest"
+        elif has_shell:
+            approval_mode = "auto-edit"
+        else:
+            approval_mode = "auto-edit"
+    else:
+        approval_mode = "full-auto"
+
+    # Build instructions
+    instructions_parts: list[str] = []
+    if config.description:
+        instructions_parts.append(config.description)
+
+    denied = [r for r in config.permissions.rules if r.action == "deny"]
+    if denied:
+        instructions_parts.append("Restrictions:")
+        for rule in denied:
+            reason = f" ({rule.reason})" if rule.reason else ""
+            instructions_parts.append(f"- Do not use {rule.target}{reason}")
+
+    codex_config: dict = {
+        "model": config.model.name or "o4-mini",
+        "approval_mode": approval_mode,
+    }
+    if instructions_parts:
+        codex_config["instructions"] = "\n".join(instructions_parts)
+
+    codex_json = json.dumps(codex_config, indent=2, ensure_ascii=False)
+
+    return AdaptResult(
+        target="codex-cli",
+        files=(
+            ("codex.json", codex_json),
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Dispatcher
+# ---------------------------------------------------------------------------
+
+_ADAPTERS: dict[str, callable] = {
+    "claude-code": _adapt_claude_code,
+    "cursor": _adapt_cursor,
+    "aider": _adapt_aider,
+    "codex-cli": _adapt_codex_cli,
+}
+
+
+def adapt(config: HarnessConfig, target: str) -> AdaptResult:
+    """Adapt *config* for the given *target* CLI tool.
+
+    Raises ``ValueError`` if the target is not supported.
+    """
+    if target not in _ADAPTERS:
+        raise ValueError(
+            f"Unknown target {target!r}. "
+            f"Supported: {', '.join(sorted(_ADAPTERS))}"
+        )
+    return _ADAPTERS[target](config)
+
+
+def adapt_all(config: HarnessConfig) -> dict[str, AdaptResult]:
+    """Adapt *config* for all supported targets."""
+    return {target: adapt(config, target) for target in _ADAPTERS}

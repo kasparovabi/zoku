@@ -39,6 +39,7 @@ from harnesskit.config import (
     ConfigBuilder,
 )
 from harnesskit.presets import PRESET_CONFIGS
+from harnesskit.adapters import adapt, adapt_all, AdaptResult, SUPPORTED_TARGETS
 from harnesskit.cli import build_parser, main
 
 
@@ -480,6 +481,149 @@ class TestPresets(unittest.TestCase):
 
 
 # ===================================================================
+# Adapter tests
+# ===================================================================
+
+class TestAdapters(unittest.TestCase):
+
+    def _make_config(self) -> HarnessConfig:
+        return (
+            ConfigBuilder("test-agent")
+            .description("Test agent")
+            .add_tools(["BashTool", "FileReadTool", "GrepTool"])
+            .add_commands(["commit", "branch"])
+            .set_permission_preset("standard")
+            .set_bootstrap_preset("standard")
+            .set_model("claude-sonnet-4-6", provider="anthropic")
+            .build()
+        )
+
+    def test_all_targets_supported(self):
+        self.assertGreater(len(SUPPORTED_TARGETS), 3)
+
+    def test_adapt_claude_code(self):
+        result = adapt(self._make_config(), "claude-code")
+        self.assertEqual(result.target, "claude-code")
+        self.assertEqual(len(result.files), 2)
+        paths = [f[0] for f in result.files]
+        self.assertIn(".claude/settings.json", paths)
+        self.assertIn("CLAUDE.md", paths)
+
+    def test_claude_code_settings_valid_json(self):
+        result = adapt(self._make_config(), "claude-code")
+        settings_content = next(c for p, c in result.files if "settings.json" in p)
+        data = json.loads(settings_content)
+        self.assertIn("permissions", data)
+        self.assertIn("allow", data["permissions"])
+
+    def test_claude_code_permissions_match(self):
+        config = self._make_config()
+        result = adapt(config, "claude-code")
+        settings_content = next(c for p, c in result.files if "settings.json" in p)
+        data = json.loads(settings_content)
+        allowed = data["permissions"]["allow"]
+        self.assertIn("BashTool", allowed)
+        self.assertIn("FileReadTool", allowed)
+
+    def test_claude_md_contains_tools(self):
+        result = adapt(self._make_config(), "claude-code")
+        claude_md = next(c for p, c in result.files if "CLAUDE.md" in p)
+        self.assertIn("BashTool", claude_md)
+        self.assertIn("/commit", claude_md)
+
+    def test_adapt_cursor(self):
+        result = adapt(self._make_config(), "cursor")
+        self.assertEqual(len(result.files), 1)
+        self.assertEqual(result.files[0][0], ".cursorrules")
+        content = result.files[0][1]
+        self.assertIn("test-agent", content)
+        self.assertIn("BashTool", content)
+
+    def test_cursor_restrictions(self):
+        result = adapt(self._make_config(), "cursor")
+        content = result.files[0][1]
+        self.assertIn("Restrictions", content)
+        self.assertIn("mcp", content.lower())
+
+    def test_adapt_aider(self):
+        result = adapt(self._make_config(), "aider")
+        self.assertEqual(len(result.files), 2)
+        paths = [f[0] for f in result.files]
+        self.assertIn(".aider.conf.yml", paths)
+        self.assertIn(".aider.conventions.md", paths)
+
+    def test_aider_model_in_config(self):
+        result = adapt(self._make_config(), "aider")
+        yml_content = next(c for p, c in result.files if ".yml" in p)
+        self.assertIn("claude-sonnet-4-6", yml_content)
+
+    def test_adapt_codex_cli(self):
+        result = adapt(self._make_config(), "codex-cli")
+        self.assertEqual(len(result.files), 1)
+        self.assertEqual(result.files[0][0], "codex.json")
+        data = json.loads(result.files[0][1])
+        self.assertIn("model", data)
+        self.assertIn("approval_mode", data)
+
+    def test_codex_approval_mode_restrictive(self):
+        config = (
+            ConfigBuilder("restricted")
+            .add_tools(["FileReadTool", "GrepTool"])
+            .set_permission_preset("restrictive")
+            .build()
+        )
+        result = adapt(config, "codex-cli")
+        data = json.loads(result.files[0][1])
+        self.assertEqual(data["approval_mode"], "suggest")
+
+    def test_codex_approval_mode_permissive(self):
+        config = (
+            ConfigBuilder("open-agent")
+            .add_tools(["BashTool"])
+            .set_permission_preset("permissive")
+            .build()
+        )
+        result = adapt(config, "codex-cli")
+        data = json.loads(result.files[0][1])
+        self.assertEqual(data["approval_mode"], "full-auto")
+
+    def test_adapt_unknown_target(self):
+        with self.assertRaises(ValueError):
+            adapt(self._make_config(), "nonexistent")
+
+    def test_adapt_all(self):
+        results = adapt_all(self._make_config())
+        self.assertEqual(len(results), len(SUPPORTED_TARGETS))
+        for target in SUPPORTED_TARGETS:
+            self.assertIn(target, results)
+
+    def test_adapt_write_files(self):
+        result = adapt(self._make_config(), "claude-code")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            written = result.write(tmpdir)
+            self.assertEqual(len(written), 2)
+            for p in written:
+                self.assertTrue(p.is_file())
+
+    def test_adapt_preview(self):
+        result = adapt(self._make_config(), "claude-code")
+        preview = result.preview()
+        self.assertIn("claude-code", preview)
+        self.assertIn("Files (2)", preview)
+
+    def test_all_presets_adapt_all_targets(self):
+        """Every preset must produce valid output for every target."""
+        for preset_name, factory in PRESET_CONFIGS.items():
+            config = factory()
+            for target in SUPPORTED_TARGETS:
+                result = adapt(config, target)
+                self.assertGreater(
+                    len(result.files), 0,
+                    f"Preset '{preset_name}' produced no files for target '{target}'",
+                )
+
+
+# ===================================================================
 # CLI tests
 # ===================================================================
 
@@ -542,6 +686,32 @@ class TestCLI(unittest.TestCase):
     def test_no_command_shows_help(self):
         ret = main([])
         self.assertEqual(ret, 0)
+
+    def test_adapt_command_claude_code(self):
+        config = PRESET_CONFIGS["dev-assistant"]()
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w") as f:
+            f.write(config.to_json())
+            config_path = f.name
+        with tempfile.TemporaryDirectory() as tmpdir:
+            try:
+                ret = main(["adapt", config_path, "-t", "claude-code", "-d", tmpdir])
+                self.assertEqual(ret, 0)
+                self.assertTrue((Path(tmpdir) / ".claude" / "settings.json").is_file())
+                self.assertTrue((Path(tmpdir) / "CLAUDE.md").is_file())
+            finally:
+                Path(config_path).unlink(missing_ok=True)
+
+    def test_adapt_command_all_targets(self):
+        config = PRESET_CONFIGS["dev-assistant"]()
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w") as f:
+            f.write(config.to_json())
+            config_path = f.name
+        with tempfile.TemporaryDirectory() as tmpdir:
+            try:
+                ret = main(["adapt", config_path, "-t", "all", "-d", tmpdir])
+                self.assertEqual(ret, 0)
+            finally:
+                Path(config_path).unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

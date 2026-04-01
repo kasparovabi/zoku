@@ -2,11 +2,12 @@
 
 Usage::
 
-    python -m harnesskit init          # Interactive wizard
-    python -m harnesskit preset <name> # Export a preset config
-    python -m harnesskit catalog       # Browse tool/command catalog
-    python -m harnesskit audit <file>  # Audit an existing config
-    python -m harnesskit presets       # List available presets
+    python -m harnesskit init                              # Interactive wizard
+    python -m harnesskit preset <name>                     # Export a preset config
+    python -m harnesskit catalog                           # Browse tool/command catalog
+    python -m harnesskit audit <file>                      # Audit an existing config
+    python -m harnesskit presets                            # List available presets
+    python -m harnesskit adapt <file> --target claude-code # Adapt for a CLI tool
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from .permissions import PRESETS as PERMISSION_PRESETS
 from .bootstrap import PIPELINE_PRESETS, STAGE_LIBRARY
 from .presets import PRESET_CONFIGS
 from .security import audit_config, sanitise_name
+from .adapters import adapt, adapt_all, SUPPORTED_TARGETS
 
 
 def _print(msg: str = "") -> None:
@@ -199,6 +201,89 @@ def cmd_stages(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_adapt(args: argparse.Namespace) -> int:
+    """Adapt a HarnessKit config for a specific CLI tool."""
+    path = Path(args.file)
+    if not path.is_file():
+        _print(f"File not found: {path}")
+        return 1
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        _print(f"Failed to parse {path}: {exc}")
+        return 1
+
+    # Reconstruct HarnessConfig from JSON
+    from .config import HarnessConfig, ModelConfig
+    from .permissions import PermissionPolicy, PermissionRule
+    from .bootstrap import BootstrapPipeline, Stage
+
+    # Rebuild permissions
+    perm_data = data.get("permissions", {})
+    rules = []
+    for r in perm_data.get("rules", []):
+        rules.append(PermissionRule(
+            target=r["target"],
+            action=r["action"],
+            reason=r.get("reason", ""),
+        ))
+    permissions = PermissionPolicy(
+        rules=tuple(rules),
+        default_action=perm_data.get("default_action", "deny"),
+    )
+
+    # Rebuild bootstrap
+    boot_data = data.get("bootstrap", {})
+    stages = []
+    for s in boot_data.get("stages", []):
+        stages.append(Stage(
+            name=s["name"],
+            kind=s["kind"],
+            description=s.get("description", ""),
+            order=s.get("order", 0),
+        ))
+    bootstrap = BootstrapPipeline(stages=tuple(stages))
+
+    # Rebuild model
+    model_data = data.get("model", {})
+    model = ModelConfig(
+        name=model_data.get("name", ""),
+        provider=model_data.get("provider", ""),
+        max_tokens=model_data.get("max_tokens", 4096),
+        temperature=model_data.get("temperature", 0.0),
+    )
+
+    config = HarnessConfig(
+        project_name=data.get("project_name", "unknown"),
+        description=data.get("description", ""),
+        tools=tuple(data.get("tools", [])),
+        commands=tuple(data.get("commands", [])),
+        permissions=permissions,
+        bootstrap=bootstrap,
+        model=model,
+    )
+
+    output_dir = Path(args.output_dir)
+    targets = list(SUPPORTED_TARGETS) if args.target == "all" else [args.target]
+
+    for target in targets:
+        try:
+            result = adapt(config, target)
+        except ValueError as exc:
+            _print(f"Error: {exc}")
+            return 1
+
+        _print(f"=== {target} ===")
+        _print(result.preview())
+        written = result.write(output_dir)
+        for p in written:
+            _print(f"  Written: {p}")
+        _print()
+
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -251,6 +336,15 @@ def build_parser() -> argparse.ArgumentParser:
     # stages
     sub.add_parser("stages", help="List available bootstrap stages")
 
+    # adapt
+    p_adapt = sub.add_parser("adapt", help="Adapt config for a specific CLI tool")
+    p_adapt.add_argument("file", help="Path to .harnesskit.json file")
+    p_adapt.add_argument("-t", "--target", required=True,
+                         choices=list(SUPPORTED_TARGETS) + ["all"],
+                         help="Target CLI tool")
+    p_adapt.add_argument("-d", "--output-dir", default=".",
+                         help="Output directory (default: current dir)")
+
     return parser
 
 
@@ -265,6 +359,7 @@ def main(argv: list[str] | None = None) -> int:
         "audit": cmd_audit,
         "presets": cmd_presets_list,
         "stages": cmd_stages,
+        "adapt": cmd_adapt,
     }
 
     if args.command in handlers:
