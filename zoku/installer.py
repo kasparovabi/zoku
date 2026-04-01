@@ -80,10 +80,10 @@ HOOK_SETTINGS = _build_hook_settings()
 def _is_zoku_entry(entry: dict) -> bool:
     for hook in entry.get("hooks", []):
         cmd = hook.get("command", "")
-        if "zoku" in cmd.lower():
+        if "zoku" in cmd.lower() or "deja" in cmd.lower():
             return True
         status = hook.get("statusMessage", "")
-        if "Zoku" in status:
+        if "Zoku" in status or "Deja" in status:
             return True
     return False
 
