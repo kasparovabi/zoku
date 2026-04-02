@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zoku"
+version = "0.1.1"
+description = "Invisible automation layer for Claude Code. Watches your sessions, discovers repeated workflows, suggests automating them."
+requires-python = ">=3.10"
+license = "MIT"
+authors = []
+keywords = ["claude-code", "automation", "workflow", "hooks", "patterns"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+readme = "README.md"
+
+[project.urls]
+Homepage = "https://github.com/kasparovabi/deja"
+Repository = "https://github.com/kasparovabi/deja"
+Issues = "https://github.com/kasparovabi/deja/issues"
+
+[project.scripts]
+zoku = "zoku.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["zoku*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

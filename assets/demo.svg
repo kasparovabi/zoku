@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 420" width="700" height="420">
+  <style>
+    @keyframes slide {
+      0%, 20% { opacity: 1; }
+      25%, 100% { opacity: 0; }
+    }
+    .frame { opacity: 0; }
+    .f1 { animation: slide 16s infinite 0s; }
+    .f2 { animation: slide 16s infinite 4s; }
+    .f3 { animation: slide 16s infinite 8s; }
+    .f4 { animation: slide 16s infinite 12s; }
+    text { font-family: "DejaVu Sans Mono", "Menlo", "Consolas", monospace; font-size: 14px; }
+    .green { fill: #98c379; }
+    .white { fill: #abb2bf; }
+    .bright { fill: #dcdfe4; }
+    .gray { fill: #5c6370; }
+    .cyan { fill: #56b6c2; }
+    .yellow { fill: #e5c07b; }
+    .blue { fill: #61afef; }
+    .title-text { font-family: system-ui, sans-serif; font-size: 13px; fill: #8c919b; }
+  </style>
+  
+  <!-- Terminal chrome -->
+  <rect width="700" height="420" rx="8" fill="#282c34"/>
+  <rect width="700" height="28" rx="8" fill="#323640"/>
+  <rect y="20" width="700" height="10" fill="#323640"/>
+  <circle cx="16" cy="14" r="6" fill="#ff5f56"/>
+  <circle cx="34" cy="14" r="6" fill="#ffbd2e"/>
+  <circle cx="52" cy="14" r="6" fill="#27c93f"/>
+  <text x="320" y="18" class="title-text" text-anchor="middle">zoku &#x2014; bash</text>
+  
+  <!-- Frame 1: pip install -->
+  <g class="frame f1">
+    <text x="16" y="55"><tspan class="green">$ </tspan><tspan class="white">pip install zoku</tspan></text>
+    <text x="16" y="77" class="white">Collecting zoku</text>
+    <text x="16" y="99" class="gray">  Downloading zoku-0.1.0-py3-none-any.whl (12 kB)</text>
+    <text x="16" y="121" class="white">Installing collected packages: zoku</text>
+    <text x="16" y="143"><tspan class="white">Successfully installed </tspan><tspan class="green">zoku-0.1.0</tspan></text>
+  </g>
+  
+  <!-- Frame 2: zoku setup -->
+  <g class="frame f2">
+    <text x="16" y="55"><tspan class="green">$ </tspan><tspan class="white">zoku setup</tspan></text>
+    <text x="16" y="99"><tspan class="bright">  Zoku</tspan><tspan class="white"> &#x2014; invisible automation layer for Claude Code</tspan></text>
+    <text x="16" y="121" class="gray">  ==================================================</text>
+    <text x="16" y="165"><tspan class="white">  Created </tspan><tspan class="cyan">~/.zoku</tspan></text>
+    <text x="16" y="187"><tspan class="white">  Updated </tspan><tspan class="cyan">~/.claude/settings.json</tspan><tspan class="gray"> (global)</tspan></text>
+    <text x="16" y="231"><tspan class="green">  Done! </tspan><tspan class="white">Zoku is now active in ALL your projects.</tspan></text>
+    <text x="16" y="275" class="yellow">  What happens next:</text>
+    <text x="16" y="297" class="white">    - Zoku silently records your tool usage</text>
+    <text x="16" y="319" class="white">    - After 2+ sessions, detects workflow patterns</text>
+    <text x="16" y="341" class="white">    - Patterns injected into Claude&#39;s context</text>
+  </g>
+  
+  <!-- Frame 3: zoku status -->
+  <g class="frame f3">
+    <text x="16" y="55"><tspan class="green">$ </tspan><tspan class="white">zoku status</tspan></text>
+    <text x="16" y="77" class="bright">Zoku Status</text>
+    <text x="16" y="99" class="gray">========================================</text>
+    <text x="16" y="121"><tspan class="white">  Installed:     </tspan><tspan class="green">Yes</tspan></text>
+    <text x="16" y="143"><tspan class="white">  Data dir:      </tspan><tspan class="cyan">~/.zoku</tspan></text>
+    <text x="16" y="165"><tspan class="white">  Sessions:      </tspan><tspan class="yellow">12</tspan></text>
+    <text x="16" y="187"><tspan class="white">  Total actions: </tspan><tspan class="yellow">247</tspan></text>
+    <text x="16" y="209"><tspan class="white">  Patterns:      </tspan><tspan class="yellow">3</tspan></text>
+  </g>
+  
+  <!-- Frame 4: zoku patterns -->
+  <g class="frame f4">
+    <text x="16" y="55"><tspan class="green">$ </tspan><tspan class="white">zoku patterns</tspan></text>
+    <text x="16" y="77"><tspan class="white">Discovered </tspan><tspan class="yellow">3</tspan><tspan class="white"> workflow pattern(s):</tspan></text>
+    <text x="16" y="115"><tspan class="white">  Pattern 1: </tspan><tspan class="cyan">Grep -> Read -> Edit -> Bash</tspan></text>
+    <text x="16" y="137"><tspan class="gray">    Seen in:  </tspan><tspan class="green">4 sessions</tspan></text>
+    <text x="16" y="159" class="gray">    Example:</text>
+    <text x="16" y="181"><tspan class="gray">      1. </tspan><tspan class="blue">[Grep] </tspan><tspan class="white">grep:handleSubmit</tspan></text>
+    <text x="16" y="203"><tspan class="gray">      2. </tspan><tspan class="blue">[Read] </tspan><tspan class="white">/src/components/Form.tsx</tspan></text>
+    <text x="16" y="225"><tspan class="gray">      3. </tspan><tspan class="blue">[Edit] </tspan><tspan class="white">edit:/src/components/Form.tsx</tspan></text>
+    <text x="16" y="269"><tspan class="white">  Pattern 2: </tspan><tspan class="cyan">Read -> Edit -> Bash</tspan></text>
+    <text x="16" y="291"><tspan class="gray">    Seen in:  </tspan><tspan class="green">3 sessions</tspan></text>
+    <text x="16" y="335"><tspan class="white">  Pattern 3: </tspan><tspan class="cyan">Glob -> Read -> Edit -> Bash</tspan></text>
+    <text x="16" y="357"><tspan class="gray">    Seen in:  </tspan><tspan class="green">2 sessions</tspan></text>
+  </g>
+</svg>
