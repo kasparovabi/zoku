@@ -7,3 +7,5 @@ archive/
 *.egg-info/
 dist/
 build/
+assets/*.png
+assets/*.gif
