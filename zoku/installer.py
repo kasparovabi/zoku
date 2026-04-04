@@ -123,7 +123,6 @@ def install(project_dir: str | Path = ".", *, global_install: bool = False) -> l
         zoku_dir = root / ".zoku"
 
     settings_path.parent.mkdir(parents=True, exist_ok=True)
-
     zoku_dir.mkdir(parents=True, exist_ok=True)
     (zoku_dir / "traces").mkdir(exist_ok=True)
     actions.append(f"Created {zoku_dir}")
