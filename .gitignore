@@ -9,3 +9,4 @@ dist/
 build/
 assets/*.png
 assets/*.gif
+assets/*.mp4
