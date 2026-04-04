@@ -69,11 +69,23 @@ def _build_hook_settings() -> dict:
                     ]
                 }
             ],
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": f"{py} -m zoku.hooks user-prompt-submit",
+                            "timeout": 3,
+                            "statusMessage": "Zoku: logging prompt..."
+                        }
+                    ]
+                }
+            ],
         }
     }
 
 
-# Keep module-level constant for backwards compatibility / tests
 HOOK_SETTINGS = _build_hook_settings()
 
 
@@ -89,36 +101,16 @@ def _is_zoku_entry(entry: dict) -> bool:
 
 
 def _global_settings_path() -> Path:
-    """Return the path to Claude Code's global (user-level) settings.
-
-    - Linux / macOS: ``~/.claude/settings.json``
-    - Windows:       ``%USERPROFILE%\\.claude\\settings.json``
-    """
     home = Path.home()
     return home / ".claude" / "settings.json"
 
 
 def _global_zoku_dir() -> Path:
-    """Return the global Zoku data directory.
-
-    - Linux / macOS: ``~/.zoku/``
-    - Windows:       ``%USERPROFILE%\\.zoku\\``
-    """
     return Path.home() / ".zoku"
 
 
 def install(project_dir: str | Path = ".", *, global_install: bool = False) -> list[str]:
-    """Install Zoku hooks into Claude Code settings.
-
-    Parameters
-    ----------
-    project_dir:
-        The project directory for a local (per-project) install.
-    global_install:
-        If ``True``, install into the user's global Claude Code settings
-        (``~/.claude/settings.json``) so hooks are active in *every*
-        project without per-project setup.
-    """
+    """Install Zoku hooks into Claude Code settings."""
     actions: list[str] = []
     hook_settings = _build_hook_settings()
 
@@ -132,12 +124,10 @@ def install(project_dir: str | Path = ".", *, global_install: bool = False) -> l
 
     settings_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Create .zoku dir
     zoku_dir.mkdir(parents=True, exist_ok=True)
     (zoku_dir / "traces").mkdir(exist_ok=True)
     actions.append(f"Created {zoku_dir}")
 
-    # Merge into settings.json
     existing: dict = {}
     if settings_path.is_file():
         try:
