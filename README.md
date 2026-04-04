@@ -1,6 +1,6 @@
 # Zoku
 
-[![CI](https://github.com/kasparovabi/deja/actions/workflows/ci.yml/badge.svg)](https://github.com/kasparovabi/deja/actions/workflows/ci.yml)
+[![CI](https://github.com/kasparovabi/zoku/actions/workflows/ci.yml/badge.svg)](https://github.com/kasparovabi/zoku/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![No Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)](#technical-details)
@@ -83,7 +83,7 @@ Claude will run it and Zoku starts working immediately — in that session and e
 ### Install from GitHub (latest development version)
 
 ```bash
-pip install git+https://github.com/kasparovabi/deja.git
+pip install git+https://github.com/kasparovabi/zoku.git
 python -m zoku setup
 ```
 
