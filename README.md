@@ -1,6 +1,6 @@
 # Zoku
 
-[![CI](https://github.com/kasparovabi/deja/actions/workflows/ci.yml/badge.svg)](https://github.com/kasparovabi/deja/actions/workflows/ci.yml)
+[![CI](https://github.com/kasparovabi/zoku/actions/workflows/ci.yml/badge.svg)](https://github.com/kasparovabi/zoku/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![No Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg)](#technical-details)
@@ -48,6 +48,8 @@ All data lives in a `.zoku/` directory (local or global depending on your instal
     traces/
         2026-04-01_session123.jsonl    # one JSONL file per session
         2026-04-02_session456.jsonl
+    prompts/
+        2026-04-01_session123.jsonl    # user prompts per session
     patterns.json                       # discovered workflow patterns
 ```
 
@@ -83,7 +85,7 @@ Claude will run it and Zoku starts working immediately — in that session and e
 ### Install from GitHub (latest development version)
 
 ```bash
-pip install git+https://github.com/kasparovabi/deja.git
+pip install git+https://github.com/kasparovabi/zoku.git
 python -m zoku setup
 ```
 
@@ -159,26 +161,27 @@ Discovered 3 workflow pattern(s):
 
 ```
 zoku/
-    __init__.py         # package metadata (version 0.1.1)
+    __init__.py         # package metadata (version 0.1.2)
     __main__.py         # entry point: python -m zoku
     cli.py              # 8 CLI commands (setup, install, uninstall, patterns, traces, status, analyse, clear)
-    recorder.py         # Action/SessionTrace dataclasses, JSONL storage, summarise_input()
+    recorder.py         # Action/SessionTrace dataclasses, JSONL storage, MCP tool normalisation
     detector.py         # Pattern detection: subsequence extraction, frequency counting, subset pruning
-    hooks.py            # Claude Code hook handlers (PostToolUse, Stop, SessionStart)
+    hooks.py            # Claude Code hook handlers (PostToolUse, Stop, SessionStart, UserPromptSubmit)
     installer.py        # Hook registration into .claude/settings.json (local + global)
 ```
 
 ### Hook Integration
 
-Zoku registers three hooks in Claude Code's settings:
+Zoku registers four hooks in Claude Code's settings:
 
 | Event | What Zoku Does | Timeout |
 |-------|---------------|--------|
-| `PostToolUse` | Records the action to the session's JSONL trace file | 5s |
+| `PostToolUse` | Records tool name, input, response summary, and success/failure | 5s |
 | `Stop` | Loads all traces, runs pattern detection, saves new patterns | 15s |
-| `SessionStart` | Loads saved patterns and injects them as context for Claude | 5s |
+| `SessionStart` | Injects patterns as context (also re-injects after compaction) | 5s |
+| `UserPromptSubmit` | Records user prompts for intent-to-action correlation | 3s |
 
-Hooks communicate via stdin/stdout JSON, following Claude Code's hook protocol. Exit code 0 means success (parse the JSON output), exit code 2 means blocking error.
+Hooks communicate via stdin/stdout JSON using the `hookSpecificOutput` protocol. MCP tools (e.g. `mcp__github__push_files`) are automatically normalised to readable format (`github:push_files`).
 
 ## Technical Details
 
@@ -186,7 +189,7 @@ Hooks communicate via stdin/stdout JSON, following Claude Code's hook protocol. 
 
 **External Dependencies**: None. Everything uses Python's standard library (json, pathlib, dataclasses, argparse, datetime, shutil).
 
-**Test Suite**: 49 tests covering all Zoku functionality. Run with:
+**Test Suite**: 67 tests covering all Zoku functionality. Run with:
 
 ```bash
 python -m pytest tests/ -v

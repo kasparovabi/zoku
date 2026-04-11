@@ -10,18 +10,18 @@ from pathlib import Path
 
 
 def _python_command() -> str:
-    """Return the Python executable used to install Zoku.
+    """Return the Python command for hook scripts.
 
-    Uses ``sys.executable`` so hooks always call the same Python that
-    has Zoku installed — this works correctly with pip, pipx, and venvs.
-    Falls back to ``python3`` / ``python`` if ``sys.executable`` is
-    unavailable.
+    Claude Code runs hook commands in a shell (bash on all platforms,
+    including Windows).  Windows-style paths like ``C:\\Python313\\python.exe``
+    break in bash, so on Windows we use the plain ``python`` command which
+    bash can resolve via PATH.  On macOS/Linux ``sys.executable`` is safe.
     """
+    if platform.system() == "Windows":
+        return "python"
     exe = sys.executable
     if exe:
         return exe
-    if platform.system() == "Windows":
-        return "python"
     return "python3"
 
 
@@ -69,11 +69,23 @@ def _build_hook_settings() -> dict:
                     ]
                 }
             ],
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": f"{py} -m zoku.hooks user-prompt-submit",
+                            "timeout": 3,
+                            "statusMessage": "Zoku: logging prompt..."
+                        }
+                    ]
+                }
+            ],
         }
     }
 
 
-# Keep module-level constant for backwards compatibility / tests
 HOOK_SETTINGS = _build_hook_settings()
 
 
@@ -89,36 +101,16 @@ def _is_zoku_entry(entry: dict) -> bool:
 
 
 def _global_settings_path() -> Path:
-    """Return the path to Claude Code's global (user-level) settings.
-
-    - Linux / macOS: ``~/.claude/settings.json``
-    - Windows:       ``%USERPROFILE%\\.claude\\settings.json``
-    """
     home = Path.home()
     return home / ".claude" / "settings.json"
 
 
 def _global_zoku_dir() -> Path:
-    """Return the global Zoku data directory.
-
-    - Linux / macOS: ``~/.zoku/``
-    - Windows:       ``%USERPROFILE%\\.zoku\\``
-    """
     return Path.home() / ".zoku"
 
 
 def install(project_dir: str | Path = ".", *, global_install: bool = False) -> list[str]:
-    """Install Zoku hooks into Claude Code settings.
-
-    Parameters
-    ----------
-    project_dir:
-        The project directory for a local (per-project) install.
-    global_install:
-        If ``True``, install into the user's global Claude Code settings
-        (``~/.claude/settings.json``) so hooks are active in *every*
-        project without per-project setup.
-    """
+    """Install Zoku hooks into Claude Code settings."""
     actions: list[str] = []
     hook_settings = _build_hook_settings()
 
@@ -131,13 +123,10 @@ def install(project_dir: str | Path = ".", *, global_install: bool = False) -> l
         zoku_dir = root / ".zoku"
 
     settings_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Create .zoku dir
     zoku_dir.mkdir(parents=True, exist_ok=True)
     (zoku_dir / "traces").mkdir(exist_ok=True)
     actions.append(f"Created {zoku_dir}")
 
-    # Merge into settings.json
     existing: dict = {}
     if settings_path.is_file():
         try:

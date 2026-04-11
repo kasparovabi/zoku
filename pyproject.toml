@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zoku"
-version = "0.1.1"
+version = "0.1.2"
 description = "Invisible automation layer for Claude Code. Watches your sessions, discovers repeated workflows, suggests automating them."
 requires-python = ">=3.10"
 license = "MIT"
@@ -19,9 +19,9 @@ dependencies = []
 readme = "README.md"
 
 [project.urls]
-Homepage = "https://github.com/kasparovabi/deja"
-Repository = "https://github.com/kasparovabi/deja"
-Issues = "https://github.com/kasparovabi/deja/issues"
+Homepage = "https://github.com/kasparovabi/zoku"
+Repository = "https://github.com/kasparovabi/zoku"
+Issues = "https://github.com/kasparovabi/zoku/issues"
 
 [project.scripts]
 zoku = "zoku.cli:main"
